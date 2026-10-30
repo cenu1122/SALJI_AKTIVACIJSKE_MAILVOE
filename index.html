@@ -7,9 +7,7 @@
   <title>DocBizHub – Aktivacija korisnika</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -46,17 +44,12 @@
       font-weight: bold;
     }
 
-    input {
+    input[type="number"] {
       width: 100%;
       padding: 13px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       font-size: 16px;
-    }
-
-    input:focus {
-      outline: 2px solid #93c5fd;
-      border-color: #2563eb;
     }
 
     .mode {
@@ -99,22 +92,15 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #1d4ed8;
-    }
+    button:hover { background: #1d4ed8; }
 
     button:disabled {
       opacity: .55;
       cursor: not-allowed;
     }
 
-    .save {
-      background: #475569;
-    }
-
-    .save:hover {
-      background: #334155;
-    }
+    .save { background: #475569; }
+    .save:hover { background: #334155; }
 
     .status {
       display: none;
@@ -152,6 +138,8 @@
       font-size: 13px;
       max-height: 260px;
       overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
 
     .note {
@@ -161,18 +149,11 @@
       line-height: 1.5;
     }
 
-    [hidden] {
-      display: none !important;
-    }
+    [hidden] { display: none !important; }
 
     @media (max-width: 450px) {
-      .container {
-        padding: 20px;
-      }
-
-      .range {
-        grid-template-columns: 1fr;
-      }
+      .container { padding: 20px; }
+      .range { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -181,23 +162,6 @@
   <div class="container">
     <h1>DocBizHub</h1>
     <div class="subtitle">Aktivacija korisnika putem e-maila</div>
-
-    <label for="projectUrl">Supabase Project URL</label>
-    <input
-      id="projectUrl"
-      type="url"
-      placeholder="https://xxxxxxxx.supabase.co"
-    >
-
-    <label for="anonKey">Supabase anon / publishable key</label>
-    <input
-      id="anonKey"
-      type="password"
-      placeholder="Unesi anon ili publishable key"
-      autocomplete="off"
-    >
-
-    <label>Način slanja</label>
 
     <div class="mode">
       <label>
@@ -260,15 +224,22 @@
     <div id="result" class="result" hidden></div>
 
     <div class="note">
-      Naziv funkcije:
+      Edge Function:
       <strong>AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND</strong>
       <br><br>
-      Brojevi se automatski povećavaju nakon uspješnog odgovora funkcije
-      bez evidentiranih grešaka.
+      Brojevi se čuvaju u browseru i automatski pomjeraju nakon uspješnog
+      odgovora funkcije bez evidentiranih grešaka.
     </div>
   </div>
 
   <script>
+    // SUPABASE POSTAVKE
+    const SUPABASE_URL =
+      "https://uduwpvdjmanrgpumdrfh.supabase.co";
+
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+
     const FUNCTION_NAME =
       "AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND";
 
@@ -276,13 +247,10 @@
 
     const $ = (id) => document.getElementById(id);
 
-    const projectUrl = $("projectUrl");
-    const anonKey = $("anonKey");
     const singleId = $("singleId");
     const fromId = $("fromId");
     const toId = $("toId");
     const sendButton = $("sendButton");
-    const saveButton = $("saveButton");
     const statusBox = $("status");
     const resultBox = $("result");
 
@@ -310,8 +278,6 @@
 
     function getSettings() {
       return {
-        projectUrl: projectUrl.value.trim(),
-        anonKey: anonKey.value.trim(),
         mode: getMode(),
         singleId: singleId.value,
         fromId: fromId.value,
@@ -336,13 +302,10 @@
     function loadSettings() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-
         if (!saved) return;
 
         const data = JSON.parse(saved);
 
-        projectUrl.value = data.projectUrl || "";
-        anonKey.value = data.anonKey || "";
         singleId.value = data.singleId || "";
         fromId.value = data.fromId || "";
         toId.value = data.toId || "";
@@ -355,10 +318,11 @@
 
         if (radio) radio.checked = true;
 
-        showMode();
       } catch (error) {
-        console.error("Greška pri učitavanju postavki:", error);
+        console.error("Greška pri učitavanju:", error);
       }
+
+      showMode();
     }
 
     function getPayload() {
@@ -394,12 +358,19 @@
       };
     }
 
+    // AUTOMATSKO POVEĆAVANJE ID BROJEVA
     function incrementNumbers(payload) {
       if (payload.id !== undefined) {
+        // Jedan ID: povećaj za 1
         singleId.value = payload.id + 1;
+
       } else {
-        fromId.value = payload.od + 1;
-        toId.value = payload.do + 1;
+        // Raspon: pomjeri početak iza prethodnog završnog ID-a
+        // i zadrži isti broj ID-jeva u sljedećem rasponu.
+        const razlika = payload.do - payload.od;
+
+        fromId.value = payload.do + 1;
+        toId.value = payload.do + razlika;
       }
 
       saveSettings(false);
@@ -413,31 +384,23 @@
       resultBox.textContent = "";
 
       try {
-        const url = projectUrl.value.trim().replace(/\/+$/, "");
-        const key = anonKey.value.trim();
-
-        if (!url || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)) {
-          throw new Error("Unesi ispravan Supabase Project URL.");
-        }
-
-        if (!key) {
-          throw new Error("Unesi Supabase anon / publishable key.");
-        }
-
         const payload = getPayload();
 
         saveSettings(false);
 
-        showStatus("Zahtjev se šalje Supabase funkciji...", "info");
+        showStatus(
+          "Zahtjev se šalje Supabase funkciji...",
+          "info"
+        );
 
         const response = await fetch(
-          `${url}/functions/v1/${FUNCTION_NAME}`,
+          `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "apikey": key,
-              "Authorization": `Bearer ${key}`
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
             },
             body: JSON.stringify(payload)
           }
@@ -451,8 +414,9 @@
           data = JSON.parse(responseText);
         } catch {
           throw new Error(
-            "Funkcija nije vratila ispravan JSON odgovor. HTTP: " +
-            response.status + "\n" + responseText
+            "Funkcija nije vratila ispravan JSON odgovor.\n" +
+            "HTTP: " + response.status + "\n" +
+            responseText
           );
         }
 
@@ -471,7 +435,7 @@
 
         if (errors > 0) {
           showStatus(
-            `Funkcija je odgovorila, ali je prijavila ${errors} grešaka.\n` +
+            `Funkcija je prijavila ${errors} grešaka.\n` +
             "Brojevi nisu povećani. Pregledaj rezultat ispod.",
             "error"
           );
@@ -481,9 +445,9 @@
         incrementNumbers(payload);
 
         showStatus(
-          "Zahtjev je uspješno obrađen!\n\n" +
+          "ZAHTJEV USPJEŠNO OBRAĐEN!\n\n" +
           "Poslani podaci: " + JSON.stringify(payload) +
-          "\n\nBrojevi su automatski povećani i sačuvani u localStorage.",
+          "\n\nBrojevi su automatski povećani i sačuvani.",
           "success"
         );
 
@@ -492,6 +456,7 @@
           "ZAHTJEV NIJE USPJEŠNO ZAVRŠEN\n\n" + error.message,
           "error"
         );
+
       } finally {
         sendButton.disabled = false;
         sendButton.textContent = "POŠALJI ZAHTJEV";
@@ -500,12 +465,11 @@
 
     sendButton.addEventListener("click", sendRequest);
 
-    saveButton.addEventListener("click", () => {
+    $("saveButton").addEventListener("click", () => {
       saveSettings(true);
     });
 
     loadSettings();
-    showMode();
   </script>
 </body>
 </html>
