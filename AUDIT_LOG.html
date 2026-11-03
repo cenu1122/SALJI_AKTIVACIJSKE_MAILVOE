@@ -1,749 +1,864 @@
 <!DOCTYPE html>
 <html lang="bs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DOCBIZHUB | Audit Log</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocBizHub – Aktivacija korisnika</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    :root {
-      --bg: #f4f6fb;
-      --card: #ffffff;
-      --text: #172033;
-      --muted: #718096;
-      --border: #e5e9f2;
-      --blue: #315efb;
-      --green: #12805c;
-      --orange: #bd7414;
-      --red: #c33b45;
-    }
+<style>
+* { box-sizing: border-box; }
 
-    * { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 25px 15px;
+  background: #f1f5f9;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
 
-    body {
-      margin: 0;
-      padding: 24px;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-    }
+.container {
+  max-width: 620px;
+  margin: 30px auto;
+  padding: 28px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.08);
+}
 
-    .container {
-      max-width: 1450px;
-      margin: auto;
-    }
+h1 {
+  margin-top: 0;
+  font-size: 25px;
+  text-align: center;
+}
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 25px;
-    }
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 28px;
+}
 
-    h1 {
-      margin: 0 0 7px;
-      font-size: 28px;
-    }
+label {
+  display: block;
+  margin: 17px 0 7px;
+  font-weight: bold;
+}
 
-    .subtitle {
-      color: var(--muted);
-      font-size: 14px;
-    }
+input[type="number"] {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 16px;
+}
 
-    button {
-      border: 0;
-      border-radius: 9px;
-      padding: 11px 17px;
-      cursor: pointer;
-      font-weight: 700;
-      background: var(--blue);
-      color: white;
-    }
+.mode {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
 
-    button:hover { opacity: .9; }
+.mode label {
+  flex: 1;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: center;
+}
 
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
+.mode input {
+  width: auto;
+  margin-right: 6px;
+}
 
-    .stat, .panel, .activity {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 13px;
-      box-shadow: 0 3px 12px rgba(20, 35, 70, .035);
-    }
+.range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
-    .stat { padding: 19px; }
+button, .audit-button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  border: 0;
+  border-radius: 9px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
 
-    .stat-label {
-      color: var(--muted);
-      font-size: 13px;
-      margin-bottom: 9px;
-    }
+button:hover, .audit-button:hover {
+  background: #1d4ed8;
+}
 
-    .stat-value {
-      font-size: 27px;
-      font-weight: 800;
-    }
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
 
-    .panel {
-      padding: 17px;
-      margin-bottom: 20px;
-    }
+.save {
+  background: #475569;
+}
 
-    .filters {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr auto;
-      gap: 11px;
-      align-items: end;
-    }
+.save:hover {
+  background: #334155;
+}
 
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 6px;
-      font-weight: 700;
-    }
+.audit-button {
+  background: #7c3aed;
+}
 
-    input, select {
-      width: 100%;
-      padding: 11px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      color: var(--text);
-      min-width: 0;
-    }
+.audit-button:hover {
+  background: #6d28d9;
+}
 
-    .section-title {
-      font-size: 18px;
-      font-weight: 800;
-      margin: 4px 0 15px;
-    }
+.notify-button {
+  background: #0f766e;
+}
 
-    #status {
-      padding: 14px;
-      border-radius: 9px;
-      background: #edf2ff;
-      color: #2848a5;
-      margin-bottom: 15px;
-      font-size: 14px;
-    }
+.notify-button:hover {
+  background: #115e59;
+}
 
-    #status.error {
-      background: #fff0f0;
-      color: var(--red);
-    }
+.status {
+  display: none;
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 9px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
 
-    .activity {
-      padding: 18px;
-      margin-bottom: 13px;
-    }
+.success {
+  display: block;
+  background: #dcfce7;
+  color: #166534;
+}
 
-    .activity-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 13px;
-    }
+.error {
+  display: block;
+  background: #fee2e2;
+  color: #991b1b;
+}
 
-    .activity-title {
-      font-weight: 800;
-      font-size: 16px;
-    }
+.info {
+  display: block;
+  background: #e0f2fe;
+  color: #075985;
+}
 
-    .meta {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 5px;
-    }
+.result {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 13px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
-    .badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 800;
-      background: #edf0f6;
-      color: #475569;
-    }
+.note {
+  margin-top: 22px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
 
-    .badge.INSERT {
-      background: #e4f7ef;
-      color: var(--green);
-    }
+.notifications {
+  margin-top: 25px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
 
-    .badge.UPDATE {
-      background: #fff2dc;
-      color: var(--orange);
-    }
+.notifications h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
 
-    .badge.DELETE {
-      background: #ffe8e8;
-      color: var(--red);
-    }
+#notificationStatus {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
 
-    .changes {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
+.notification-item {
+  padding: 12px;
+  margin-top: 9px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #2563eb;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
 
-    .change {
-      padding: 11px;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      min-width: 0;
-    }
+.notification-item.audit {
+  border-left-color: #7c3aed;
+}
 
-    .change-name {
-      font-weight: 800;
-      font-size: 13px;
-      margin-bottom: 8px;
-      overflow-wrap: anywhere;
-    }
+[hidden] {
+  display: none !important;
+}
 
-    .old-value, .new-value {
-      font-size: 13px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-      line-height: 1.5;
-    }
-
-    .old-value { color: var(--red); }
-    .new-value { color: var(--green); }
-
-    .value-label {
-      font-size: 10px;
-      color: var(--muted);
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 3px;
-    }
-
-    details {
-      margin-top: 13px;
-      border-top: 1px solid var(--border);
-      padding-top: 11px;
-    }
-
-    summary {
-      cursor: pointer;
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    pre {
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      background: #f7f8fb;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 11px;
-      max-height: 350px;
-      overflow: auto;
-    }
-
-    .empty {
-      text-align: center;
-      color: var(--muted);
-      padding: 40px 10px;
-      background: white;
-      border-radius: 12px;
-    }
-
-    @media (max-width: 900px) {
-      .filters { grid-template-columns: 1fr 1fr; }
-      .stats { grid-template-columns: 1fr 1fr; }
-    }
-
-    @media (max-width: 600px) {
-      body { padding: 13px; }
-      h1 { font-size: 23px; }
-      .filters { grid-template-columns: 1fr; }
-      .changes { grid-template-columns: 1fr; }
-      .activity { padding: 13px; }
-    }
-  </style>
+@media (max-width: 450px) {
+  .container { padding: 20px; }
+  .range { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 
 <body>
-  <main class="container">
 
-    <header>
+<div class="container">
+
+  <h1>DocBizHub</h1>
+  <div class="subtitle">Aktivacija korisnika putem e-maila</div>
+
+  <!-- DUGME AUDIT LOG -->
+  <a
+    href="https://cenu1122.github.io/SALJI_AKTIVACIJSKE_MAILVOE/AUDIT_LOG.html"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="audit-button"
+  >
+    OTVORI AUDIT LOG
+  </a>
+
+  <div class="mode">
+    <label>
+      <input type="radio" name="mode" value="single" checked>
+      Jedan ID
+    </label>
+
+    <label>
+      <input type="radio" name="mode" value="range">
+      Od – do
+    </label>
+  </div>
+
+  <div id="singleBox">
+    <label for="singleId">ID korisnika</label>
+    <input
+      id="singleId"
+      type="number"
+      min="1"
+      step="1"
+      placeholder="Npr. 100"
+    >
+  </div>
+
+  <div id="rangeBox" hidden>
+    <div class="range">
       <div>
-        <h1>📋 Audit Log</h1>
-        <div class="subtitle">
-          DOCBIZHUB – Evidencija svih promjena u sistemu
-        </div>
+        <label for="fromId">Od ID</label>
+        <input
+          id="fromId"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Npr. 100"
+        >
       </div>
 
-      <button id="refreshBtn">↻ Osvježi evidenciju</button>
-    </header>
-
-    <section class="stats">
-      <div class="stat">
-        <div class="stat-label">Ukupno evidentiranih događaja</div>
-        <div class="stat-value" id="totalCount">0</div>
+      <div>
+        <label for="toId">Do ID</label>
+        <input
+          id="toId"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Npr. 110"
+        >
       </div>
+    </div>
+  </div>
 
-      <div class="stat">
-        <div class="stat-label">Dodavanja</div>
-        <div class="stat-value" id="insertCount">0</div>
-      </div>
+  <button id="sendButton" type="button">
+    POŠALJI ZAHTJEV
+  </button>
 
-      <div class="stat">
-        <div class="stat-label">Izmjene</div>
-        <div class="stat-value" id="updateCount">0</div>
-      </div>
+  <button id="saveButton" class="save" type="button">
+    SAČUVAJ POSTAVKE
+  </button>
 
-      <div class="stat">
-        <div class="stat-label">Brisanja</div>
-        <div class="stat-value" id="deleteCount">0</div>
-      </div>
-    </section>
+  <div id="status" class="status"></div>
+  <div id="result" class="result" hidden></div>
 
-    <div id="status">Provjeravam prijavu i učitavam evidenciju...</div>
+  <!-- OBAVIJESTI -->
+  <div class="notifications">
 
-    <section class="panel">
-      <div class="section-title">Pretraga i filteri</div>
+    <h3>OBAVIJESTI I PRAĆENJE PROMJENA</h3>
 
-      <div class="filters">
-        <div>
-          <label for="searchInput">Pretraga</label>
-          <input id="searchInput"
-            placeholder="Korisnik, tabela, ID ili vrijednost...">
-        </div>
+    <button
+      id="enableNotifications"
+      class="notify-button"
+      type="button"
+    >
+      UKLJUČI BROWSER OBAVIJESTI
+    </button>
 
-        <div>
-          <label for="tableFilter">Tabela</label>
-          <select id="tableFilter">
-            <option value="">Sve tabele</option>
-          </select>
-        </div>
+    <div id="notificationStatus">
+      Pokretanje praćenja...
+    </div>
 
-        <div>
-          <label for="operationFilter">Vrsta promjene</label>
-          <select id="operationFilter">
-            <option value="">Sve promjene</option>
-            <option value="INSERT">Dodavanje</option>
-            <option value="UPDATE">Izmjena</option>
-            <option value="DELETE">Brisanje</option>
-          </select>
-        </div>
+    <div id="notificationList"></div>
 
-        <div>
-          <label for="dateFilter">Datum</label>
-          <input id="dateFilter" type="date">
-        </div>
+  </div>
 
-        <button id="clearBtn">Očisti filtere</button>
-      </div>
-    </section>
+  <div class="note">
+    Edge Function:
+    <strong>AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND</strong>
 
-    <div class="section-title">Historija aktivnosti</div>
+    <br><br>
 
-    <section id="activityList"></section>
+    Brojevi se čuvaju u browseru i automatski pomjeraju nakon
+    uspješnog odgovora funkcije bez evidentiranih grešaka.
 
-  </main>
+    <br><br>
+
+    Audit log se provjerava svakih 60 sekundi.
+  </div>
+
+</div>
 
 <script>
-  const SUPABASE_URL =
-    'https://uduwpvdjmanrgpumdrfh.supabase.co';
 
-  const SUPABASE_ANON_KEY =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ';
+// =============================================
+// SUPABASE POSTAVKE
+// =============================================
 
-  const ADMIN_ID =
-    '526b4d88-d95a-43d4-a43b-0cdf2306a245';
+const SUPABASE_URL =
+  "https://uduwpvdjmanrgpumdrfh.supabase.co";
 
-  const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwiaWF0IjoxNzg0ODE5MDAwLCJleHAiOjIxMDAzODcwODR9.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+
+const FUNCTION_NAME =
+  "AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND";
+
+const STORAGE_KEY =
+  "docbizhub_activation_sender_v1";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+
+const $ = id => document.getElementById(id);
+
+const singleId = $("singleId");
+const fromId = $("fromId");
+const toId = $("toId");
+const sendButton = $("sendButton");
+const statusBox = $("status");
+const resultBox = $("result");
+const notificationStatus = $("notificationStatus");
+const notificationList = $("notificationList");
+
+
+// =============================================
+// AKTIVACIJA KORISNIKA
+// =============================================
+
+function getMode() {
+  return document.querySelector(
+    'input[name="mode"]:checked'
+  ).value;
+}
+
+function showMode() {
+  const mode = getMode();
+
+  $("singleBox").hidden = mode !== "single";
+  $("rangeBox").hidden = mode !== "range";
+}
+
+document.querySelectorAll('input[name="mode"]').forEach(radio => {
+  radio.addEventListener("change", showMode);
+});
+
+function showStatus(message, type) {
+  statusBox.className = "status " + type;
+  statusBox.textContent = message;
+}
+
+function getSettings() {
+  return {
+    mode: getMode(),
+    singleId: singleId.value,
+    fromId: fromId.value,
+    toId: toId.value
+  };
+}
+
+function saveSettings(showMessage = true) {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(getSettings())
   );
 
-  let allLogs = [];
+  if (showMessage) {
+    showStatus(
+      "Postavke su sačuvane u localStorage.",
+      "success"
+    );
+  }
+}
 
-  const $ = id => document.getElementById(id);
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
 
-  function setStatus(message, error = false) {
-    $('status').textContent = message;
-    $('status').className = error ? 'error' : '';
+    if (!saved) return;
+
+    const data = JSON.parse(saved);
+
+    singleId.value = data.singleId || "";
+    fromId.value = data.fromId || "";
+    toId.value = data.toId || "";
+
+    const mode = data.mode || "single";
+
+    const radio = document.querySelector(
+      `input[name="mode"][value="${mode}"]`
+    );
+
+    if (radio) radio.checked = true;
+
+  } catch (error) {
+    console.error("Greška pri učitavanju:", error);
   }
 
-  function safeText(value) {
-    if (value === null || value === undefined || value === '') {
-      return '—';
+  showMode();
+}
+
+function getPayload() {
+  if (getMode() === "single") {
+    const id = Number(singleId.value);
+
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw new Error("Unesi ispravan ID korisnika.");
     }
 
-    if (typeof value === 'object') {
-      return JSON.stringify(value, null, 2);
-    }
-
-    return String(value);
+    return { id };
   }
 
-  function formatDate(value) {
-    if (!value) return 'Nepoznat datum';
+  const od = Number(fromId.value);
+  const doId = Number(toId.value);
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return safeText(value);
-
-    return date.toLocaleString('bs-BA', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+  if (
+    !Number.isSafeInteger(od) ||
+    !Number.isSafeInteger(doId) ||
+    od < 1 ||
+    doId < 1
+  ) {
+    throw new Error("Unesi ispravne početni i završni ID.");
   }
 
-  function displayOperation(operation) {
-    const names = {
-      INSERT: 'DODAVANJE',
-      UPDATE: 'IZMJENA',
-      DELETE: 'BRISANJE'
-    };
-
-    return names[operation] || operation || 'DRUGO';
+  if (od > doId) {
+    throw new Error(
+      "Početni ID ne može biti veći od završnog."
+    );
   }
 
-  function isSensitive(key) {
-    return /password|token|secret|api.?key|iban/i.test(key);
+  return {
+    od: od,
+    do: doId
+  };
+}
+
+function incrementNumbers(payload) {
+  if (payload.id !== undefined) {
+    singleId.value = payload.id + 1;
+  } else {
+    const razlika = payload.do - payload.od;
+
+    fromId.value = payload.do + 1;
+    toId.value = payload.do + razlika;
   }
 
-  function displayValue(key, value) {
-    if (isSensitive(key) && value !== null && value !== undefined) {
-      return '•••••••• (skriveno)';
-    }
+  saveSettings(false);
+}
 
-    return safeText(value);
-  }
+async function sendRequest() {
+  sendButton.disabled = true;
+  sendButton.textContent = "ŠALJEM...";
 
-  function getChanges(log) {
-    const oldData = log.old_data || {};
-    const newData = log.new_data || {};
-    const keys = new Set([
-      ...Object.keys(oldData),
-      ...Object.keys(newData)
-    ]);
+  resultBox.hidden = true;
+  resultBox.textContent = "";
 
-    if (log.operation === 'INSERT') {
-      return Object.keys(newData).map(key => ({
-        key,
-        oldValue: null,
-        newValue: newData[key]
-      }));
-    }
+  try {
+    const payload = getPayload();
 
-    if (log.operation === 'DELETE') {
-      return Object.keys(oldData).map(key => ({
-        key,
-        oldValue: oldData[key],
-        newValue: null
-      }));
-    }
+    saveSettings(false);
 
-    const changes = [];
+    showStatus(
+      "Zahtjev se šalje Supabase funkciji...",
+      "info"
+    );
 
-    for (const key of keys) {
-      if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
-        changes.push({
-          key,
-          oldValue: oldData[key],
-          newValue: newData[key]
-        });
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(payload)
       }
-    }
-
-    return changes;
-  }
-
-  function makeElement(tag, className, text) {
-    const el = document.createElement(tag);
-
-    if (className) el.className = className;
-    if (text !== undefined) el.textContent = text;
-
-    return el;
-  }
-
-  function renderLog(log) {
-    const card = makeElement('article', 'activity');
-
-    const top = makeElement('div', 'activity-top');
-    const left = document.createElement('div');
-
-    const title = makeElement(
-      'div',
-      'activity-title',
-      log.table_name + ' · ID ' +
-      safeText((log.new_data || log.old_data || {}).id || '—')
     );
 
-    const meta = makeElement(
-      'div',
-      'meta',
-      'Vrijeme: ' + formatDate(log.changed_at) +
-      ' · Shema: ' + safeText(log.table_schema)
-    );
+    const responseText = await response.text();
 
-    left.append(title, meta);
+    let data;
 
-    const badge = makeElement(
-      'span',
-      'badge ' + (log.operation || ''),
-      displayOperation(log.operation)
-    );
-
-    top.append(left, badge);
-    card.append(top);
-
-    const user = makeElement(
-      'div',
-      'meta',
-      'Izvršilac: ' + (log.changed_by || 'Nije zabilježen')
-    );
-
-    card.append(user);
-
-    const changes = getChanges(log);
-    const changesBox = makeElement('div', 'changes');
-
-    if (changes.length === 0) {
-      changesBox.append(
-        makeElement('div', 'meta', 'Nema pronađenih razlika u podacima.')
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        "Funkcija nije vratila ispravan JSON odgovor.\n" +
+        "HTTP: " + response.status + "\n" +
+        responseText
       );
     }
 
-    changes.forEach(change => {
-      const item = makeElement('div', 'change');
+    resultBox.hidden = false;
+    resultBox.textContent = JSON.stringify(data, null, 2);
 
-      item.append(
-        makeElement('div', 'change-name', change.key)
+    if (!response.ok || data.success !== true) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        `Greška HTTP ${response.status}`
       );
+    }
 
-      const oldBox = document.createElement('div');
-      oldBox.append(
-        makeElement('div', 'value-label', 'Prije'),
-        makeElement(
-          'div',
-          'old-value',
-          displayValue(change.key, change.oldValue)
-        )
-      );
+    const errors = Number(data.greske || 0);
 
-      const newBox = document.createElement('div');
-      newBox.append(
-        makeElement('div', 'value-label', 'Poslije'),
-        makeElement(
-          'div',
-          'new-value',
-          displayValue(change.key, change.newValue)
-        )
-      );
-
-      item.append(oldBox, newBox);
-      changesBox.append(item);
-    });
-
-    card.append(changesBox);
-
-    const details = document.createElement('details');
-    const summary = makeElement(
-      'summary',
-      '',
-      'Prikaži kompletne podatke prije i poslije'
-    );
-
-    const pre = makeElement(
-      'pre',
-      '',
-      JSON.stringify({
-        old_data: log.old_data,
-        new_data: log.new_data
-      }, null, 2)
-    );
-
-    details.append(summary, pre);
-    card.append(details);
-
-    return card;
-  }
-
-  function updateTableOptions() {
-    const select = $('tableFilter');
-    const selected = select.value;
-
-    select.replaceChildren();
-
-    const all = document.createElement('option');
-    all.value = '';
-    all.textContent = 'Sve tabele';
-    select.append(all);
-
-    const tables = [...new Set(
-      allLogs.map(log => log.table_name).filter(Boolean)
-    )].sort();
-
-    tables.forEach(table => {
-      const option = document.createElement('option');
-      option.value = table;
-      option.textContent = table;
-      select.append(option);
-    });
-
-    select.value = selected;
-  }
-
-  function render() {
-    const search = $('searchInput').value.trim().toLowerCase();
-    const table = $('tableFilter').value;
-    const operation = $('operationFilter').value;
-    const date = $('dateFilter').value;
-
-    const filtered = allLogs.filter(log => {
-      if (table && log.table_name !== table) return false;
-      if (operation && log.operation !== operation) return false;
-
-      if (date && !String(log.changed_at || '').startsWith(date)) {
-        return false;
-      }
-
-      if (search) {
-        const searchable = JSON.stringify(log).toLowerCase();
-
-        if (!searchable.includes(search)) return false;
-      }
-
-      return true;
-    });
-
-    $('totalCount').textContent = allLogs.length;
-    $('insertCount').textContent =
-      allLogs.filter(x => x.operation === 'INSERT').length;
-    $('updateCount').textContent =
-      allLogs.filter(x => x.operation === 'UPDATE').length;
-    $('deleteCount').textContent =
-      allLogs.filter(x => x.operation === 'DELETE').length;
-
-    const list = $('activityList');
-    list.replaceChildren();
-
-    if (filtered.length === 0) {
-      list.append(
-        makeElement(
-          'div',
-          'empty',
-          'Nema aktivnosti koje odgovaraju odabranim filterima.'
-        )
+    if (errors > 0) {
+      showStatus(
+        `Funkcija je prijavila ${errors} grešaka.\n` +
+        "Brojevi nisu povećani. Pregledaj rezultat ispod.",
+        "error"
       );
       return;
     }
 
-    filtered.forEach(log => {
-      list.append(renderLog(log));
-    });
+    incrementNumbers(payload);
+
+    showStatus(
+      "ZAHTJEV USPJEŠNO OBRAĐEN!\n\n" +
+      "Poslani podaci: " + JSON.stringify(payload) +
+      "\n\nBrojevi su automatski povećani i sačuvani.",
+      "success"
+    );
+
+  } catch (error) {
+    showStatus(
+      "ZAHTJEV NIJE USPJEŠNO ZAVRŠEN\n\n" +
+      error.message,
+      "error"
+    );
+
+  } finally {
+    sendButton.disabled = false;
+    sendButton.textContent = "POŠALJI ZAHTJEV";
+  }
+}
+
+sendButton.addEventListener("click", sendRequest);
+
+$("saveButton").addEventListener("click", () => {
+  saveSettings(true);
+});
+
+loadSettings();
+
+
+// =============================================
+// SISTEM OBAVIJESTI
+// =============================================
+
+function addNotification(title, message, type = "normal") {
+  const item = document.createElement("div");
+
+  item.className =
+    "notification-item" +
+    (type === "audit" ? " audit" : "");
+
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+
+  const content = document.createElement("div");
+  content.textContent = message;
+
+  const time = document.createElement("small");
+  time.textContent = new Date().toLocaleString("bs-BA");
+
+  item.appendChild(heading);
+  item.appendChild(content);
+  item.appendChild(time);
+
+  notificationList.prepend(item);
+
+  while (notificationList.children.length > 30) {
+    notificationList.removeChild(
+      notificationList.lastChild
+    );
   }
 
-  async function loadLogs() {
-    setStatus('Provjeravam administratorsku prijavu...');
-
+  if (
+    "Notification" in window &&
+    Notification.permission === "granted"
+  ) {
     try {
-      const { data: sessionData, error: sessionError } =
-        await db.auth.getSession();
+      new Notification(title, {
+        body: message.substring(0, 250)
+      });
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+}
 
-      if (sessionError) throw sessionError;
 
-      const session = sessionData.session;
+// =============================================
+// DOZVOLA ZA BROWSER OBAVIJESTI
+// =============================================
 
-      if (!session) {
-        setStatus(
-          'Niste prijavljeni. Prijavite se u DOCBIZHUB, pa ponovo otvorite ovu stranicu.',
-          true
-        );
-        $('activityList').replaceChildren();
-        return;
-      }
+$("enableNotifications").addEventListener("click", async () => {
 
-      if (session.user.id !== ADMIN_ID) {
-        setStatus(
-          'Pristup odbijen. Ovaj nalog nema administratorsko odobrenje za Audit Log.',
-          true
-        );
-        $('activityList').replaceChildren();
-        return;
-      }
+  if (!("Notification" in window)) {
+    notificationStatus.textContent =
+      "Ovaj browser ne podržava browser obavijesti.";
+    return;
+  }
 
-      setStatus('Učitavam audit evidenciju...');
+  const permission = await Notification.requestPermission();
 
-      const { data, error } = await db
-        .from('audit_log')
-        .select(
-          'id, table_schema, table_name, operation, old_data, new_data, changed_by, changed_at'
-        )
-        .order('changed_at', { ascending: false })
-        .limit(500);
+  if (permission === "granted") {
+    notificationStatus.textContent =
+      "Browser obavijesti su uključene.";
+
+    addNotification(
+      "Obavijesti uključene",
+      "Browser će prikazivati nove obavijesti."
+    );
+
+  } else {
+    notificationStatus.textContent =
+      "Dozvola za browser obavijesti nije odobrena.";
+  }
+
+});
+
+
+// =============================================
+// PRAĆENJE TABELE NOTIFIKACIJE
+// =============================================
+
+supabaseClient
+  .channel("docbizhub-notifikacije-live")
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "NOTIFIKACIJE"
+    },
+    payload => {
+      addNotification(
+        "NOVA NOTIFIKACIJA",
+        JSON.stringify(payload.new),
+        "normal"
+      );
+    }
+  )
+  .subscribe(status => {
+
+    if (status === "SUBSCRIBED") {
+      notificationStatus.textContent =
+        "Praćenje NOTIFIKACIJE je aktivno.";
+    }
+
+    if (status === "CHANNEL_ERROR") {
+      notificationStatus.textContent =
+        "Greška pri povezivanju s NOTIFIKACIJE. " +
+        "Provjeri Realtime i RLS postavke.";
+    }
+
+  });
+
+
+// =============================================
+// PRAĆENJE AUDIT LOG SVAKIH 60 SEKUNDI
+// =============================================
+
+let lastAuditId = null;
+let auditInitialized = false;
+let auditBusy = false;
+
+async function checkAuditLog() {
+
+  if (auditBusy) return;
+
+  auditBusy = true;
+
+  try {
+
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    const session = sessionData.session;
+
+    if (!session) {
+      notificationStatus.textContent =
+        "NOTIFIKACIJE se prate. Za audit_log je potrebna " +
+        "admin prijava u AUDIT_LOG.html. Nakon prijave " +
+        "osvježi ovu stranicu.";
+      return;
+    }
+
+    // Prvo učitavanje: zapamti posljednji ID.
+    // Stari zapisi se ne prikazuju kao nove promjene.
+
+    if (!auditInitialized) {
+
+      const { data, error } = await supabaseClient
+        .from("audit_log")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1);
 
       if (error) throw error;
 
-      allLogs = data || [];
+      lastAuditId =
+        data && data.length ? String(data[0].id) : "0";
 
-      updateTableOptions();
-      render();
+      auditInitialized = true;
 
-      setStatus(
-        'Uspješno učitano ' + allLogs.length +
-        ' zapisa. Prikazano je najviše 500 najnovijih događaja.'
-      );
+      notificationStatus.textContent =
+        "Admin prijava potvrđena. Audit log se provjerava " +
+        "svakih 60 sekundi.";
 
-    } catch (error) {
-      console.error('Audit Log greška:', error);
-
-      setStatus(
-        'Greška pri učitavanju: ' +
-        (error.message || 'Nepoznata greška') +
-        '. Provjeri RLS pravilo i prijavu.',
-        true
-      );
+      return;
     }
+
+    // Učitaj samo nove audit zapise.
+
+    const { data: changes, error } = await supabaseClient
+      .from("audit_log")
+      .select(
+        "id, table_schema, table_name, operation, " +
+        "old_data, new_data, changed_by, changed_at"
+      )
+      .gt("id", lastAuditId)
+      .order("id", { ascending: true })
+      .limit(100);
+
+    if (error) throw error;
+
+    if (changes && changes.length > 0) {
+
+      for (const change of changes) {
+
+        const operation =
+          String(change.operation || "PROMJENA").toUpperCase();
+
+        const tableName =
+          change.table_name || "Nepoznata tabela";
+
+        const rowData =
+          change.new_data || change.old_data || {};
+
+        const rowId =
+          rowData.id !== undefined
+            ? rowData.id
+            : "nije dostupan";
+
+        const message =
+          "Tabela: " + tableName +
+          "\nOperacija: " + operation +
+          "\nID reda: " + rowId +
+          "\nVrijeme: " + (change.changed_at || "nije dostupno") +
+          "\nKorisnik: " + (change.changed_by || "nije evidentiran") +
+          "\n\nStari podaci: " + JSON.stringify(change.old_data) +
+          "\n\nNovi podaci: " + JSON.stringify(change.new_data);
+
+        addNotification(
+          "AUDIT LOG – " + operation,
+          message,
+          "audit"
+        );
+
+        lastAuditId = String(change.id);
+      }
+    }
+
+    notificationStatus.textContent =
+      "Praćenje aktivno. Posljednja provjera: " +
+      new Date().toLocaleTimeString("bs-BA") +
+      ". Sljedeća provjera za 60 sekundi.";
+
+  } catch (error) {
+
+    console.error("Audit log greška:", error);
+
+    notificationStatus.textContent =
+      "Audit log nije dostupan: " +
+      error.message +
+      ". Provjeri admin prijavu i RLS pravila.";
+
+  } finally {
+    auditBusy = false;
   }
+}
 
-  $('refreshBtn').addEventListener('click', loadLogs);
 
-  $('clearBtn').addEventListener('click', () => {
-    $('searchInput').value = '';
-    $('tableFilter').value = '';
-    $('operationFilter').value = '';
-    $('dateFilter').value = '';
-    render();
-  });
+// Prva provjera.
 
-  [
-    'searchInput',
-    'tableFilter',
-    'operationFilter',
-    'dateFilter'
-  ].forEach(id => {
-    $(id).addEventListener('input', render);
-    $(id).addEventListener('change', render);
-  });
+checkAuditLog();
 
-  loadLogs();
+// Ponavljanje svakih 60 sekundi.
+
+setInterval(checkAuditLog, 60000);
+
+// Provjera pri povratku na karticu.
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    checkAuditLog();
+  }
+});
+
 </script>
+
 </body>
 </html>
