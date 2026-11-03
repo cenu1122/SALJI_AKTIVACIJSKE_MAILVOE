@@ -1,862 +1,635 @@
+
 <!DOCTYPE html>
 <html lang="bs">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocBizHub – Aktivacija korisnika</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocBizHub - Audit Log</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<style>
-* { box-sizing: border-box; }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-body {
-  margin: 0;
-  padding: 25px 15px;
-  background: #f1f5f9;
-  color: #172033;
-  font-family: Arial, sans-serif;
-}
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0b1120;
+      color: #e5e7eb;
+      font-family: Arial, sans-serif;
+    }
 
-.container {
-  max-width: 620px;
-  margin: 30px auto;
-  padding: 28px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.08);
-}
+    .container {
+      max-width: 1300px;
+      margin: 35px auto;
+    }
 
-h1 {
-  margin-top: 0;
-  font-size: 25px;
-  text-align: center;
-}
+    .panel {
+      background: #151e30;
+      border: 1px solid #29364c;
+      border-radius: 14px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
 
-.subtitle {
-  text-align: center;
-  color: #64748b;
-  margin-bottom: 28px;
-}
+    h1 {
+      color: #60a5fa;
+      margin-top: 0;
+    }
 
-label {
-  display: block;
-  margin: 17px 0 7px;
-  font-weight: bold;
-}
+    h2 {
+      color: #93c5fd;
+    }
 
-input[type="number"] {
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 16px;
-}
+    label {
+      display: block;
+      margin-top: 15px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
 
-.mode {
-  display: flex;
-  gap: 12px;
-  margin: 20px 0;
-}
+    input {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0b1120;
+      color: white;
+      font-size: 16px;
+    }
 
-.mode label {
-  flex: 1;
-  margin: 0;
-  padding: 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  cursor: pointer;
-  text-align: center;
-}
+    button {
+      padding: 12px 20px;
+      margin: 12px 6px 0 0;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-.mode input {
-  width: auto;
-  margin-right: 6px;
-}
+    button:hover {
+      background: #1d4ed8;
+    }
 
-.range {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
 
-button, .audit-button {
-  display: block;
-  width: 100%;
-  padding: 15px;
-  margin-top: 15px;
-  border: 0;
-  border-radius: 9px;
-  background: #2563eb;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-}
+    .danger {
+      background: #b91c1c;
+    }
 
-button:hover, .audit-button:hover {
-  background: #1d4ed8;
-}
+    .danger:hover {
+      background: #991b1b;
+    }
 
-button:disabled {
-  opacity: .55;
-  cursor: not-allowed;
-}
+    .hidden {
+      display: none !important;
+    }
 
-.save {
-  background: #475569;
-}
+    .error {
+      color: #f87171;
+      margin-top: 15px;
+      overflow-wrap: anywhere;
+    }
 
-.save:hover {
-  background: #334155;
-}
+    .success {
+      color: #4ade80;
+      margin-top: 10px;
+    }
 
-.audit-button {
-  background: #7c3aed;
-}
+    .muted {
+      color: #94a3b8;
+      font-size: 13px;
+    }
 
-.audit-button:hover {
-  background: #6d28d9;
-}
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
 
-.notify-button {
-  background: #0f766e;
-}
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
 
-.notify-button:hover {
-  background: #115e59;
-}
+    table {
+      width: 100%;
+      min-width: 950px;
+      border-collapse: collapse;
+    }
 
-.status {
-  display: none;
-  margin-top: 20px;
-  padding: 15px;
-  border-radius: 9px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.5;
-}
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #29364c;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
 
-.success {
-  display: block;
-  background: #dcfce7;
-  color: #166534;
-}
+    th {
+      background: #101a2b;
+      color: #93c5fd;
+    }
 
-.error {
-  display: block;
-  background: #fee2e2;
-  color: #991b1b;
-}
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      max-width: 350px;
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
 
-.info {
-  display: block;
-  background: #e0f2fe;
-  color: #075985;
-}
+    .status {
+      color: #4ade80;
+    }
 
-.result {
-  margin-top: 15px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  font-size: 13px;
-  max-height: 260px;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
 
-.note {
-  margin-top: 22px;
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.notifications {
-  margin-top: 25px;
-  padding: 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-}
-
-.notifications h3 {
-  margin: 0 0 10px;
-  font-size: 17px;
-}
-
-#notificationStatus {
-  color: #475569;
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-.notification-item {
-  padding: 12px;
-  margin-top: 9px;
-  background: white;
-  border: 1px solid #cbd5e1;
-  border-left: 4px solid #2563eb;
-  border-radius: 7px;
-  font-size: 13px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.notification-item.audit {
-  border-left-color: #7c3aed;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-@media (max-width: 450px) {
-  .container { padding: 20px; }
-  .range { grid-template-columns: 1fr; }
-}
-</style>
+      .panel {
+        padding: 17px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>DocBizHub</h1>
-  <div class="subtitle">Aktivacija korisnika putem e-maila</div>
+  <!-- PRIJAVA -->
+  <section id="loginScreen" class="panel">
+    <h1>DocBizHub – Audit Log</h1>
 
-  <!-- DUGME AUDIT LOG -->
-  <a
-    href="https://cenu1122.github.io/SALJI_AKTIVACIJSKE_MAILVOE/AUDIT_LOG.html"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="audit-button"
-  >
-    OTVORI AUDIT LOG
-  </a>
+    <p class="muted">
+      Prijavi se administratorskim Supabase nalogom
+      da bi pristupio evidenciji promjena.
+    </p>
 
-  <div class="mode">
-    <label>
-      <input type="radio" name="mode" value="single" checked>
-      Jedan ID
-    </label>
+    <label for="email">Administratorski email</label>
 
-    <label>
-      <input type="radio" name="mode" value="range">
-      Od – do
-    </label>
-  </div>
-
-  <div id="singleBox">
-    <label for="singleId">ID korisnika</label>
     <input
-      id="singleId"
-      type="number"
-      min="1"
-      step="1"
-      placeholder="Npr. 100"
+      id="email"
+      type="email"
+      value="admin@gnail.com"
+      autocomplete="username"
     >
-  </div>
 
-  <div id="rangeBox" hidden>
-    <div class="range">
-      <div>
-        <label for="fromId">Od ID</label>
-        <input
-          id="fromId"
-          type="number"
-          min="1"
-          step="1"
-          placeholder="Npr. 100"
-        >
-      </div>
+    <label for="password">Lozinka</label>
 
-      <div>
-        <label for="toId">Do ID</label>
-        <input
-          id="toId"
-          type="number"
-          min="1"
-          step="1"
-          placeholder="Npr. 110"
-        >
-      </div>
-    </div>
-  </div>
-
-  <button id="sendButton" type="button">
-    POŠALJI ZAHTJEV
-  </button>
-
-  <button id="saveButton" class="save" type="button">
-    SAČUVAJ POSTAVKE
-  </button>
-
-  <div id="status" class="status"></div>
-  <div id="result" class="result" hidden></div>
-
-  <!-- OBAVIJESTI -->
-  <div class="notifications">
-
-    <h3>OBAVIJESTI I PRAĆENJE PROMJENA</h3>
-
-    <button
-      id="enableNotifications"
-      class="notify-button"
-      type="button"
+    <input
+      id="password"
+      type="password"
+      placeholder="Unesi svoju lozinku"
+      autocomplete="current-password"
     >
-      UKLJUČI BROWSER OBAVIJESTI
+
+    <button id="loginButton">
+      PRIJAVI SE
     </button>
 
-    <div id="notificationStatus">
-      Pokretanje praćenja...
+    <div id="loginMessage" class="error"></div>
+  </section>
+
+
+  <!-- AUDIT LOG -->
+  <section id="auditScreen" class="hidden">
+
+    <div class="panel">
+
+      <div class="topbar">
+
+        <div>
+          <h1>Audit Log</h1>
+          <div class="status">
+            Administratorski pristup
+          </div>
+          <p id="adminInfo" class="muted"></p>
+        </div>
+
+        <div>
+          <button id="refreshButton">
+            OSVJEŽI
+          </button>
+
+          <button id="logoutButton" class="danger">
+            ODJAVI SE
+          </button>
+        </div>
+
+      </div>
+
+      <p id="lastUpdate" class="muted">
+        Učitavanje...
+      </p>
+
+      <div id="dataMessage"></div>
+
     </div>
 
-    <div id="notificationList"></div>
 
-  </div>
+    <div class="panel">
 
-  <div class="note">
-    Edge Function:
-    <strong>AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND</strong>
+      <h2>Evidencija promjena u bazi</h2>
 
-    <br><br>
+      <div class="table-wrap">
 
-    Brojevi se čuvaju u browseru i automatski pomjeraju nakon
-    uspješnog odgovora funkcije bez evidentiranih grešaka.
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Šema</th>
+              <th>Tabela</th>
+              <th>Operacija</th>
+              <th>Vrijeme</th>
+              <th>Korisnik UUID</th>
+              <th>Stari podaci</th>
+              <th>Novi podaci</th>
+            </tr>
+          </thead>
 
-    <br><br>
+          <tbody id="auditRows">
+            <tr>
+              <td colspan="8">Učitavanje zapisa...</td>
+            </tr>
+          </tbody>
 
-    Audit log se provjerava svakih 60 sekundi.
-  </div>
+        </table>
+
+      </div>
+
+    </div>
+
+  </section>
 
 </div>
 
+
 <script>
+  // SUPABASE PODEŠAVANJA
 
-// =============================================
-// SUPABASE POSTAVKE
-// =============================================
+  const SUPABASE_URL =
+    "https://uduwpvdjmanrgpumdrfh.supabase.co";
 
-const SUPABASE_URL =
-  "https://uduwpvdjmanrgpumdrfh.supabase.co";
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
 
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwiaWF0IjoxNzg0ODE5MDAwLCJleHAiOjIxMDAzODcwODR9.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
-
-const FUNCTION_NAME =
-  "AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND";
-
-const STORAGE_KEY =
-  "docbizhub_activation_sender_v1";
-
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  }
-);
-
-const $ = id => document.getElementById(id);
-
-const singleId = $("singleId");
-const fromId = $("fromId");
-const toId = $("toId");
-const sendButton = $("sendButton");
-const statusBox = $("status");
-const resultBox = $("result");
-const notificationStatus = $("notificationStatus");
-const notificationList = $("notificationList");
+  const ADMIN_UUID =
+    "526b4d88-d95a-43d4-a43b-0cdf2306a245";
 
 
-// =============================================
-// AKTIVACIJA KORISNIKA
-// =============================================
+  // KREIRANJE SUPABASE KLIJENTA
 
-function getMode() {
-  return document.querySelector(
-    'input[name="mode"]:checked'
-  ).value;
-}
-
-function showMode() {
-  const mode = getMode();
-
-  $("singleBox").hidden = mode !== "single";
-  $("rangeBox").hidden = mode !== "range";
-}
-
-document.querySelectorAll('input[name="mode"]').forEach(radio => {
-  radio.addEventListener("change", showMode);
-});
-
-function showStatus(message, type) {
-  statusBox.className = "status " + type;
-  statusBox.textContent = message;
-}
-
-function getSettings() {
-  return {
-    mode: getMode(),
-    singleId: singleId.value,
-    fromId: fromId.value,
-    toId: toId.value
-  };
-}
-
-function saveSettings(showMessage = true) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(getSettings())
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
   );
 
-  if (showMessage) {
-    showStatus(
-      "Postavke su sačuvane u localStorage.",
-      "success"
-    );
-  }
-}
 
-function loadSettings() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+  // ELEMENTI STRANICE
 
-    if (!saved) return;
+  const loginScreen =
+    document.getElementById("loginScreen");
 
-    const data = JSON.parse(saved);
+  const auditScreen =
+    document.getElementById("auditScreen");
 
-    singleId.value = data.singleId || "";
-    fromId.value = data.fromId || "";
-    toId.value = data.toId || "";
+  const loginMessage =
+    document.getElementById("loginMessage");
 
-    const mode = data.mode || "single";
+  const auditRows =
+    document.getElementById("auditRows");
 
-    const radio = document.querySelector(
-      `input[name="mode"][value="${mode}"]`
-    );
+  let refreshTimer = null;
 
-    if (radio) radio.checked = true;
 
-  } catch (error) {
-    console.error("Greška pri učitavanju:", error);
-  }
+  // PRIJAVA
 
-  showMode();
-}
+  document
+    .getElementById("loginButton")
+    .addEventListener("click", login);
 
-function getPayload() {
-  if (getMode() === "single") {
-    const id = Number(singleId.value);
 
-    if (!Number.isSafeInteger(id) || id < 1) {
-      throw new Error("Unesi ispravan ID korisnika.");
-    }
+  async function login() {
 
-    return { id };
-  }
+    const email =
+      document.getElementById("email").value.trim();
 
-  const od = Number(fromId.value);
-  const doId = Number(toId.value);
+    const password =
+      document.getElementById("password").value;
 
-  if (
-    !Number.isSafeInteger(od) ||
-    !Number.isSafeInteger(doId) ||
-    od < 1 ||
-    doId < 1
-  ) {
-    throw new Error("Unesi ispravne početni i završni ID.");
-  }
+    const button =
+      document.getElementById("loginButton");
 
-  if (od > doId) {
-    throw new Error(
-      "Početni ID ne može biti veći od završnog."
-    );
-  }
+    loginMessage.textContent = "";
 
-  return {
-    od: od,
-    do: doId
-  };
-}
+    if (!email || !password) {
+      loginMessage.textContent =
+        "Unesi email i lozinku.";
 
-function incrementNumbers(payload) {
-  if (payload.id !== undefined) {
-    singleId.value = payload.id + 1;
-  } else {
-    const razlika = payload.do - payload.od;
-
-    fromId.value = payload.do + 1;
-    toId.value = payload.do + razlika;
-  }
-
-  saveSettings(false);
-}
-
-async function sendRequest() {
-  sendButton.disabled = true;
-  sendButton.textContent = "ŠALJEM...";
-
-  resultBox.hidden = true;
-  resultBox.textContent = "";
-
-  try {
-    const payload = getPayload();
-
-    saveSettings(false);
-
-    showStatus(
-      "Zahtjev se šalje Supabase funkciji...",
-      "info"
-    );
-
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify(payload)
-      }
-    );
-
-    const responseText = await response.text();
-
-    let data;
-
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      throw new Error(
-        "Funkcija nije vratila ispravan JSON odgovor.\n" +
-        "HTTP: " + response.status + "\n" +
-        responseText
-      );
-    }
-
-    resultBox.hidden = false;
-    resultBox.textContent = JSON.stringify(data, null, 2);
-
-    if (!response.ok || data.success !== true) {
-      throw new Error(
-        data.error ||
-        data.message ||
-        `Greška HTTP ${response.status}`
-      );
-    }
-
-    const errors = Number(data.greske || 0);
-
-    if (errors > 0) {
-      showStatus(
-        `Funkcija je prijavila ${errors} grešaka.\n` +
-        "Brojevi nisu povećani. Pregledaj rezultat ispod.",
-        "error"
-      );
       return;
     }
 
-    incrementNumbers(payload);
+    button.disabled = true;
+    button.textContent = "PRIJAVA U TOKU...";
 
-    showStatus(
-      "ZAHTJEV USPJEŠNO OBRAĐEN!\n\n" +
-      "Poslani podaci: " + JSON.stringify(payload) +
-      "\n\nBrojevi su automatski povećani i sačuvani.",
-      "success"
-    );
-
-  } catch (error) {
-    showStatus(
-      "ZAHTJEV NIJE USPJEŠNO ZAVRŠEN\n\n" +
-      error.message,
-      "error"
-    );
-
-  } finally {
-    sendButton.disabled = false;
-    sendButton.textContent = "POŠALJI ZAHTJEV";
-  }
-}
-
-sendButton.addEventListener("click", sendRequest);
-
-$("saveButton").addEventListener("click", () => {
-  saveSettings(true);
-});
-
-loadSettings();
-
-
-// =============================================
-// SISTEM OBAVIJESTI
-// =============================================
-
-function addNotification(title, message, type = "normal") {
-  const item = document.createElement("div");
-
-  item.className =
-    "notification-item" +
-    (type === "audit" ? " audit" : "");
-
-  const heading = document.createElement("strong");
-  heading.textContent = title;
-
-  const content = document.createElement("div");
-  content.textContent = message;
-
-  const time = document.createElement("small");
-  time.textContent = new Date().toLocaleString("bs-BA");
-
-  item.appendChild(heading);
-  item.appendChild(content);
-  item.appendChild(time);
-
-  notificationList.prepend(item);
-
-  while (notificationList.children.length > 30) {
-    notificationList.removeChild(
-      notificationList.lastChild
-    );
-  }
-
-  if (
-    "Notification" in window &&
-    Notification.permission === "granted"
-  ) {
     try {
-      new Notification(title, {
-        body: message.substring(0, 250)
-      });
+
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user || data.user.id !== ADMIN_UUID) {
+
+        await supabaseClient.auth.signOut();
+
+        throw new Error(
+          "Ovaj nalog nema administratorska prava za Audit Log."
+        );
+      }
+
+      document.getElementById("password").value = "";
+
+      await showAuditScreen(data.user);
+
     } catch (error) {
-      console.warn(error);
+
+      loginMessage.textContent =
+        "Greška: " + error.message;
+
+    } finally {
+
+      button.disabled = false;
+      button.textContent = "PRIJAVI SE";
+
     }
   }
-}
 
 
-// =============================================
-// DOZVOLA ZA BROWSER OBAVIJESTI
-// =============================================
+  // PRIKAZ AUDIT LOG STRANICE
 
-$("enableNotifications").addEventListener("click", async () => {
+  async function showAuditScreen(user) {
 
-  if (!("Notification" in window)) {
-    notificationStatus.textContent =
-      "Ovaj browser ne podržava browser obavijesti.";
-    return;
+    loginScreen.classList.add("hidden");
+    auditScreen.classList.remove("hidden");
+
+    document.getElementById("adminInfo").textContent =
+      "Prijavljen administrator: " + user.email;
+
+    await loadAuditLog();
+
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+    }
+
+    refreshTimer = setInterval(() => {
+      loadAuditLog();
+    }, 30000);
   }
 
-  const permission = await Notification.requestPermission();
 
-  if (permission === "granted") {
-    notificationStatus.textContent =
-      "Browser obavijesti su uključene.";
+  // UČITAVANJE AUDIT LOG PODATAKA
 
-    addNotification(
-      "Obavijesti uključene",
-      "Browser će prikazivati nove obavijesti."
-    );
+  async function loadAuditLog() {
 
-  } else {
-    notificationStatus.textContent =
-      "Dozvola za browser obavijesti nije odobrena.";
+    const message =
+      document.getElementById("dataMessage");
+
+    message.textContent = "";
+
+    try {
+
+      const { data: sessionData, error: sessionError } =
+        await supabaseClient.auth.getSession();
+
+      if (
+        sessionError ||
+        !sessionData.session ||
+        sessionData.session.user.id !== ADMIN_UUID
+      ) {
+
+        await logout();
+        return;
+      }
+
+
+      const { data, error } =
+        await supabaseClient
+          .from("audit_log")
+          .select(`
+            id,
+            table_schema,
+            table_name,
+            operation,
+            old_data,
+            new_data,
+            changed_by,
+            changed_at
+          `)
+          .order("id", { ascending: false })
+          .limit(200);
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      auditRows.innerHTML = "";
+
+      if (!data || data.length === 0) {
+
+        auditRows.innerHTML =
+          '<tr><td colspan="8">Nema dostupnih zapisa.</td></tr>';
+
+      } else {
+
+        data.forEach(record => {
+
+          const tr = document.createElement("tr");
+
+          addCell(tr, record.id);
+          addCell(tr, record.table_schema);
+          addCell(tr, record.table_name);
+          addCell(tr, record.operation);
+
+          addCell(
+            tr,
+            record.changed_at
+              ? new Date(record.changed_at).toLocaleString()
+              : ""
+          );
+
+          addCell(
+            tr,
+            record.changed_by || "Nepoznat korisnik"
+          );
+
+          addJsonCell(tr, record.old_data);
+          addJsonCell(tr, record.new_data);
+
+          auditRows.appendChild(tr);
+
+        });
+
+      }
+
+      document.getElementById("lastUpdate").textContent =
+        "Posljednje osvježavanje: " +
+        new Date().toLocaleString();
+
+    } catch (error) {
+
+      message.className = "error";
+
+      message.textContent =
+        "Greška pri učitavanju: " + error.message;
+
+      auditRows.innerHTML =
+        '<tr><td colspan="8">Podaci nisu učitani.</td></tr>';
+
+    }
   }
 
-});
+
+  // DODAVANJE TEKSTUALNE ĆELIJE
+
+  function addCell(row, value) {
+
+    const td = document.createElement("td");
+
+    td.textContent =
+      value === null || value === undefined
+        ? ""
+        : String(value);
+
+    row.appendChild(td);
+  }
 
 
-// =============================================
-// PRAĆENJE TABELE NOTIFIKACIJE
-// =============================================
+  // DODAVANJE JSON ĆELIJE
 
-supabaseClient
-  .channel("docbizhub-notifikacije-live")
-  .on(
-    "postgres_changes",
-    {
-      event: "INSERT",
-      schema: "public",
-      table: "NOTIFIKACIJE"
-    },
-    payload => {
-      addNotification(
-        "NOVA NOTIFIKACIJA",
-        JSON.stringify(payload.new),
-        "normal"
-      );
+  function addJsonCell(row, value) {
+
+    const td = document.createElement("td");
+
+    const pre = document.createElement("pre");
+
+    pre.textContent =
+      value === null || value === undefined
+        ? "—"
+        : JSON.stringify(value, null, 2);
+
+    td.appendChild(pre);
+
+    row.appendChild(td);
+  }
+
+
+  // RUČNO OSVJEŽAVANJE
+
+  document
+    .getElementById("refreshButton")
+    .addEventListener("click", loadAuditLog);
+
+
+  // ODJAVA
+
+  document
+    .getElementById("logoutButton")
+    .addEventListener("click", logout);
+
+
+  async function logout() {
+
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
     }
-  )
-  .subscribe(status => {
 
-    if (status === "SUBSCRIBED") {
-      notificationStatus.textContent =
-        "Praćenje NOTIFIKACIJE je aktivno.";
-    }
+    await supabaseClient.auth.signOut();
 
-    if (status === "CHANNEL_ERROR") {
-      notificationStatus.textContent =
-        "Greška pri povezivanju s NOTIFIKACIJE. " +
-        "Provjeri Realtime i RLS postavke.";
-    }
+    auditScreen.classList.add("hidden");
+    loginScreen.classList.remove("hidden");
 
-  });
+    document.getElementById("password").value = "";
+
+    loginMessage.textContent = "";
+    loginMessage.className = "error";
+
+  }
 
 
-// =============================================
-// PRAĆENJE AUDIT LOG SVAKIH 60 SEKUNDI
-// =============================================
+  // PROVJERA POSTOJEĆE SUPABASE SESIJE
 
-let lastAuditId = null;
-let auditInitialized = false;
-let auditBusy = false;
+  async function checkSession() {
 
-async function checkAuditLog() {
-
-  if (auditBusy) return;
-
-  auditBusy = true;
-
-  try {
-
-    const { data: sessionData, error: sessionError } =
+    const { data, error } =
       await supabaseClient.auth.getSession();
 
-    if (sessionError) throw sessionError;
-
-    const session = sessionData.session;
-
-    if (!session) {
-      notificationStatus.textContent =
-        "NOTIFIKACIJE se prate. Za audit_log je potrebna " +
-        "admin prijava u AUDIT_LOG.html. Nakon prijave " +
-        "osvježi ovu stranicu.";
+    if (error || !data.session) {
       return;
     }
 
-    // Prvo učitavanje: zapamti posljednji ID.
-    // Stari zapisi se ne prikazuju kao nove promjene.
+    if (data.session.user.id === ADMIN_UUID) {
 
-    if (!auditInitialized) {
+      await showAuditScreen(data.session.user);
 
-      const { data, error } = await supabaseClient
-        .from("audit_log")
-        .select("id")
-        .order("id", { ascending: false })
-        .limit(1);
+    } else {
 
-      if (error) throw error;
+      await supabaseClient.auth.signOut();
 
-      lastAuditId =
-        data && data.length ? String(data[0].id) : "0";
-
-      auditInitialized = true;
-
-      notificationStatus.textContent =
-        "Admin prijava potvrđena. Audit log se provjerava " +
-        "svakih 60 sekundi.";
-
-      return;
     }
+  }
 
-    // Učitaj samo nove audit zapise.
 
-    const { data: changes, error } = await supabaseClient
-      .from("audit_log")
-      .select(
-        "id, table_schema, table_name, operation, " +
-        "old_data, new_data, changed_by, changed_at"
-      )
-      .gt("id", lastAuditId)
-      .order("id", { ascending: true })
-      .limit(100);
+  // AUTOMATSKO ODJAVLJIVANJE KAD SESIJA ISTEKNE
 
-    if (error) throw error;
+  supabaseClient.auth.onAuthStateChange(
+    (event, session) => {
 
-    if (changes && changes.length > 0) {
+      if (
+        event === "SIGNED_OUT" ||
+        (session && session.user.id !== ADMIN_UUID)
+      ) {
 
-      for (const change of changes) {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+          refreshTimer = null;
+        }
 
-        const operation =
-          String(change.operation || "PROMJENA").toUpperCase();
+        auditScreen.classList.add("hidden");
+        loginScreen.classList.remove("hidden");
 
-        const tableName =
-          change.table_name || "Nepoznata tabela";
-
-        const rowData =
-          change.new_data || change.old_data || {};
-
-        const rowId =
-          rowData.id !== undefined
-            ? rowData.id
-            : "nije dostupan";
-
-        const message =
-          "Tabela: " + tableName +
-          "\nOperacija: " + operation +
-          "\nID reda: " + rowId +
-          "\nVrijeme: " + (change.changed_at || "nije dostupno") +
-          "\nKorisnik: " + (change.changed_by || "nije evidentiran") +
-          "\n\nStari podaci: " + JSON.stringify(change.old_data) +
-          "\n\nNovi podaci: " + JSON.stringify(change.new_data);
-
-        addNotification(
-          "AUDIT LOG – " + operation,
-          message,
-          "audit"
-        );
-
-        lastAuditId = String(change.id);
       }
+
     }
-
-    notificationStatus.textContent =
-      "Praćenje aktivno. Posljednja provjera: " +
-      new Date().toLocaleTimeString("bs-BA") +
-      ". Sljedeća provjera za 60 sekundi.";
-
-  } catch (error) {
-
-    console.error("Audit log greška:", error);
-
-    notificationStatus.textContent =
-      "Audit log nije dostupan: " +
-      error.message +
-      ". Provjeri admin prijavu i RLS pravila.";
-
-  } finally {
-    auditBusy = false;
-  }
-}
+  );
 
 
-// Prva provjera.
+  // POKRETANJE
 
-checkAuditLog();
-
-// Ponavljanje svakih 60 sekundi.
-
-setInterval(checkAuditLog, 60000);
-
-// Provjera pri povratku na karticu.
-
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    checkAuditLog();
-  }
-});
+  checkSession();
 
 </script>
 
