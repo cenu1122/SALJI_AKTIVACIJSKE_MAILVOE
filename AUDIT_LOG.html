@@ -22,7 +22,7 @@
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 1500px;
       margin: 30px auto;
       background: #1e293b;
       padding: 25px;
@@ -76,6 +76,11 @@
       background: #1d4ed8;
     }
 
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
     .logout {
       background: #dc2626;
     }
@@ -99,6 +104,10 @@
       min-height: 20px;
     }
 
+    .error {
+      color: #fca5a5 !important;
+    }
+
     .table-wrapper {
       width: 100%;
       overflow-x: auto;
@@ -106,7 +115,7 @@
 
     table {
       width: 100%;
-      min-width: 950px;
+      min-width: 1100px;
       border-collapse: collapse;
       background: #0f172a;
     }
@@ -123,6 +132,7 @@
       color: #bfdbfe;
       position: sticky;
       top: 0;
+      z-index: 1;
     }
 
     tr:hover {
@@ -130,7 +140,7 @@
     }
 
     .change-item {
-      padding: 9px;
+      padding: 10px;
       margin-bottom: 8px;
       background: #1e293b;
       border-left: 3px solid #3b82f6;
@@ -141,25 +151,23 @@
     .field-name {
       color: #93c5fd;
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 7px;
     }
 
     .before {
       color: #fca5a5;
-      margin: 3px 0;
+      margin: 4px 0;
+      overflow-wrap: anywhere;
     }
 
     .after {
       color: #86efac;
-      margin: 3px 0;
+      margin: 4px 0;
+      overflow-wrap: anywhere;
     }
 
     .operation {
       font-weight: bold;
-    }
-
-    .error {
-      color: #fca5a5 !important;
     }
 
     @media (max-width: 600px) {
@@ -183,15 +191,11 @@
 
 <div class="container">
 
-  <h1>DocBizHub - Audit Log</h1>
-  <div class="subtitle">
-    Evidencija promjena u bazi podataka
-  </div>
+  <h1>Audit Log</h1>
+  <div class="subtitle">Administratorski pristup</div>
 
   <!-- LOGIN -->
   <div id="loginScreen">
-
-    <h2>Prijava administratora</h2>
 
     <label for="email">E-mail</label>
     <input
@@ -217,7 +221,7 @@
 
   </div>
 
-  <!-- AUDIT SCREEN -->
+  <!-- AUDIT LOG -->
   <div id="auditScreen" class="hidden">
 
     <div class="toolbar">
@@ -230,7 +234,7 @@
         </button>
 
         <button class="logout" onclick="logout()">
-          ODJAVA
+          ODJAVI SE
         </button>
       </div>
 
@@ -238,25 +242,30 @@
 
     <div id="status"></div>
 
+    <h2>Evidencija promjena u bazi</h2>
+
     <div class="table-wrapper">
+
       <table>
         <thead>
           <tr>
             <th>ID</th>
+            <th>Šema</th>
             <th>Tabela</th>
             <th>Operacija</th>
             <th>Vrijeme</th>
-            <th>Korisnik</th>
+            <th>Korisnik UUID</th>
             <th>Izvršene promjene</th>
           </tr>
         </thead>
 
         <tbody id="auditRows">
           <tr>
-            <td colspan="6">Učitavanje...</td>
+            <td colspan="7">Učitavanje...</td>
           </tr>
         </tbody>
       </table>
+
     </div>
 
   </div>
@@ -264,13 +273,14 @@
 </div>
 
 <script>
+
   // SUPABASE POSTAVKE
 
   const SUPABASE_URL =
     "https://uduwpvdjmanrgpumdrfh.supabase.co";
 
   const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJiatI3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
 
   const ADMIN_UUID =
     "526b4d88-d95a-43d4-a43b-0cdf2306a245";
@@ -287,11 +297,13 @@
   const auditRows = document.getElementById("auditRows");
 
   let refreshTimer = null;
+  let loadingAudit = false;
 
 
   // PRIJAVA ADMINISTRATORA
 
   async function login() {
+
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
@@ -305,10 +317,12 @@
     }
 
     const loginButton = document.getElementById("loginButton");
+
     loginButton.disabled = true;
     loginButton.textContent = "PRIJAVA...";
 
     try {
+
       const { data, error } =
         await supabaseClient.auth.signInWithPassword({
           email,
@@ -320,21 +334,26 @@
       }
 
       if (!data.user || data.user.id !== ADMIN_UUID) {
+
         await supabaseClient.auth.signOut();
-        throw new Error("Ovaj nalog nema administratorski pristup.");
+
+        throw new Error(
+          "Ovaj nalog nema administratorski pristup."
+        );
       }
 
       await showAuditScreen(data.user);
 
     } catch (error) {
-      loginStatus.textContent =
-        "Greška: " + error.message;
 
+      loginStatus.textContent = "Greška: " + error.message;
       loginStatus.classList.add("error");
 
     } finally {
+
       loginButton.disabled = false;
       loginButton.textContent = "PRIJAVI SE";
+
     }
   }
 
@@ -342,6 +361,7 @@
   // PRIKAZ AUDIT LOG EKRANA
 
   async function showAuditScreen(user) {
+
     loginScreen.classList.add("hidden");
     auditScreen.classList.remove("hidden");
 
@@ -363,18 +383,33 @@
   // UČITAVANJE AUDIT LOG PODATAKA
 
   async function loadAuditLog() {
+
+    if (loadingAudit) return;
+
+    loadingAudit = true;
+
     status.textContent = "Učitavanje podataka...";
     status.classList.remove("error");
 
     try {
-      const { data: sessionData } =
+
+      const { data: sessionData, error: sessionError } =
         await supabaseClient.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
 
       const user = sessionData.session?.user;
 
       if (!user || user.id !== ADMIN_UUID) {
-        throw new Error("Sesija nije važeća ili nemate pristup.");
+        throw new Error(
+          "Sesija nije važeća ili nemate administratorski pristup."
+        );
       }
+
+      // POMOĆNA TABELA SE NE PRIKAZUJE.
+      // PRIKAZUJU SE GLAVNI ZAPISI IZ AUDIT LOGA.
 
       const { data, error } = await supabaseClient
         .from("audit_log")
@@ -399,18 +434,26 @@
       auditRows.innerHTML = "";
 
       if (!data || data.length === 0) {
+
         const row = document.createElement("tr");
-        addCell(row, "Nema zabilježenih promjena.");
-        const cell = row.querySelector("td");
-        cell.colSpan = 6;
+        const cell = document.createElement("td");
+
+        cell.colSpan = 7;
+        cell.textContent = "Nema zabilježenih promjena.";
+
+        row.appendChild(cell);
         auditRows.appendChild(row);
+
       } else {
+
         data.forEach(record => {
+
           const row = document.createElement("tr");
 
           addCell(row, record.id);
-          addCell(row, record.table_name);
-          addCell(row, record.operation);
+          addCell(row, record.table_schema || "—");
+          addCell(row, record.table_name || "—");
+          addCell(row, record.operation || "—");
 
           const date = record.changed_at
             ? new Date(record.changed_at).toLocaleString("bs-BA")
@@ -428,9 +471,14 @@
           );
 
           if (changes.length === 0) {
-            changesCell.textContent = "Nema prikazanih promjena.";
+
+            changesCell.textContent =
+              "Nema promijenjenih polja.";
+
           } else {
+
             changes.forEach(change => {
+
               const item = document.createElement("div");
               item.className = "change-item";
 
@@ -453,20 +501,24 @@
               item.appendChild(after);
 
               changesCell.appendChild(item);
+
             });
+
           }
 
           row.appendChild(changesCell);
           auditRows.appendChild(row);
+
         });
+
       }
 
       status.textContent =
-        "Učitano " + (data?.length || 0) +
-        " zapisa. Posljednje osvježavanje: " +
-        new Date().toLocaleTimeString("bs-BA");
+        "Posljednje osvježavanje: " +
+        new Date().toLocaleString("bs-BA");
 
     } catch (error) {
+
       status.textContent = "Greška: " + error.message;
       status.classList.add("error");
 
@@ -475,18 +527,24 @@
       const row = document.createElement("tr");
       const cell = document.createElement("td");
 
-      cell.colSpan = 6;
+      cell.colSpan = 7;
       cell.textContent = error.message;
 
       row.appendChild(cell);
       auditRows.appendChild(row);
+
+    } finally {
+
+      loadingAudit = false;
+
     }
   }
 
 
-  // PRONALAŽENJE PROMIJENJENIH POLJA
+  // PRONALAŽENJE SAMO STVARNO PROMIJENJENIH POLJA
 
   function getChangedFields(oldData, newData, operation) {
+
     const oldObj = oldData || {};
     const newObj = newData || {};
 
@@ -498,36 +556,50 @@
     const changes = [];
 
     fields.forEach(field => {
+
       const oldValue = oldObj[field];
       const newValue = newObj[field];
 
       if (operation === "INSERT") {
+
         if (newValue !== null && newValue !== undefined) {
+
           changes.push({
             field,
             oldValue: null,
             newValue
           });
+
         }
 
       } else if (operation === "DELETE") {
+
         if (oldValue !== null && oldValue !== undefined) {
+
           changes.push({
             field,
             oldValue,
             newValue: null
           });
+
         }
 
-      } else if (
-        JSON.stringify(oldValue) !== JSON.stringify(newValue)
-      ) {
-        changes.push({
-          field,
-          oldValue,
-          newValue
-        });
+      } else {
+
+        if (
+          JSON.stringify(oldValue) !== JSON.stringify(newValue)
+        ) {
+
+          changes.push({
+            field,
+            oldValue,
+            newValue
+          });
+
+        }
+
       }
+
     });
 
     return changes;
@@ -537,6 +609,7 @@
   // FORMATIRANJE VRIJEDNOSTI
 
   function formatValue(value) {
+
     if (value === null || value === undefined) {
       return "—";
     }
@@ -552,6 +625,7 @@
   // DODAVANJE ĆELIJE U TABELU
 
   function addCell(row, value) {
+
     const td = document.createElement("td");
 
     td.textContent =
@@ -566,6 +640,7 @@
   // ODJAVA
 
   async function logout() {
+
     if (refreshTimer) {
       clearInterval(refreshTimer);
       refreshTimer = null;
@@ -577,14 +652,16 @@
     loginScreen.classList.remove("hidden");
 
     document.getElementById("password").value = "";
+
     loginStatus.textContent = "";
     status.textContent = "";
   }
 
 
-  // PROVJERA POSTOJEĆE SESIJE PRI OTVARANJU STRANICE
+  // PROVJERA POSTOJEĆE SESIJE
 
   async function checkExistingSession() {
+
     const { data, error } =
       await supabaseClient.auth.getSession();
 
@@ -595,9 +672,13 @@
     const user = data.session?.user;
 
     if (user && user.id === ADMIN_UUID) {
+
       await showAuditScreen(user);
+
     } else if (user) {
+
       await supabaseClient.auth.signOut();
+
     }
   }
 
