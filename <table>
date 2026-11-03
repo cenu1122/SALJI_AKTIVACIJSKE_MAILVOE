@@ -1,0 +1,624 @@
+
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocBizHub - Audit Log</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 25px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 30px auto;
+      background: #1e293b;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.3);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #60a5fa;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 25px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0 15px;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      background: #0f172a;
+      color: white;
+      font-size: 16px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .logout {
+      background: #dc2626;
+    }
+
+    .logout:hover {
+      background: #b91c1c;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    #status {
+      color: #93c5fd;
+      margin: 12px 0;
+      min-height: 20px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 950px;
+      border-collapse: collapse;
+      background: #0f172a;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #334155;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #334155;
+      color: #bfdbfe;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background: #1e293b;
+    }
+
+    .change-item {
+      padding: 9px;
+      margin-bottom: 8px;
+      background: #1e293b;
+      border-left: 3px solid #3b82f6;
+      border-radius: 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .field-name {
+      color: #93c5fd;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .before {
+      color: #fca5a5;
+      margin: 3px 0;
+    }
+
+    .after {
+      color: #86efac;
+      margin: 3px 0;
+    }
+
+    .operation {
+      font-weight: bold;
+    }
+
+    .error {
+      color: #fca5a5 !important;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 15px;
+        margin: 10px auto;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>DocBizHub - Audit Log</h1>
+  <div class="subtitle">
+    Evidencija promjena u bazi podataka
+  </div>
+
+  <!-- LOGIN -->
+  <div id="loginScreen">
+
+    <h2>Prijava administratora</h2>
+
+    <label for="email">E-mail</label>
+    <input
+      type="email"
+      id="email"
+      value="admin@gnail.com"
+      autocomplete="username"
+    >
+
+    <label for="password">Lozinka</label>
+    <input
+      type="password"
+      id="password"
+      placeholder="Unesi administratorsku lozinku"
+      autocomplete="current-password"
+    >
+
+    <button id="loginButton" onclick="login()">
+      PRIJAVI SE
+    </button>
+
+    <div id="loginStatus"></div>
+
+  </div>
+
+  <!-- AUDIT SCREEN -->
+  <div id="auditScreen" class="hidden">
+
+    <div class="toolbar">
+
+      <div id="adminInfo"></div>
+
+      <div>
+        <button onclick="loadAuditLog()">
+          OSVJEŽI
+        </button>
+
+        <button class="logout" onclick="logout()">
+          ODJAVA
+        </button>
+      </div>
+
+    </div>
+
+    <div id="status"></div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tabela</th>
+            <th>Operacija</th>
+            <th>Vrijeme</th>
+            <th>Korisnik</th>
+            <th>Izvršene promjene</th>
+          </tr>
+        </thead>
+
+        <tbody id="auditRows">
+          <tr>
+            <td colspan="6">Učitavanje...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // SUPABASE POSTAVKE
+
+  const SUPABASE_URL =
+    "https://uduwpvdjmanrgpumdrfh.supabase.co";
+
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+
+  const ADMIN_UUID =
+    "526b4d88-d95a-43d4-a43b-0cdf2306a245";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  const loginScreen = document.getElementById("loginScreen");
+  const auditScreen = document.getElementById("auditScreen");
+  const loginStatus = document.getElementById("loginStatus");
+  const status = document.getElementById("status");
+  const auditRows = document.getElementById("auditRows");
+
+  let refreshTimer = null;
+
+
+  // PRIJAVA ADMINISTRATORA
+
+  async function login() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    loginStatus.textContent = "";
+    loginStatus.classList.remove("error");
+
+    if (!email || !password) {
+      loginStatus.textContent = "Unesi e-mail i lozinku.";
+      loginStatus.classList.add("error");
+      return;
+    }
+
+    const loginButton = document.getElementById("loginButton");
+    loginButton.disabled = true;
+    loginButton.textContent = "PRIJAVA...";
+
+    try {
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user || data.user.id !== ADMIN_UUID) {
+        await supabaseClient.auth.signOut();
+        throw new Error("Ovaj nalog nema administratorski pristup.");
+      }
+
+      await showAuditScreen(data.user);
+
+    } catch (error) {
+      loginStatus.textContent =
+        "Greška: " + error.message;
+
+      loginStatus.classList.add("error");
+
+    } finally {
+      loginButton.disabled = false;
+      loginButton.textContent = "PRIJAVI SE";
+    }
+  }
+
+
+  // PRIKAZ AUDIT LOG EKRANA
+
+  async function showAuditScreen(user) {
+    loginScreen.classList.add("hidden");
+    auditScreen.classList.remove("hidden");
+
+    document.getElementById("adminInfo").textContent =
+      "Prijavljen administrator: " + (user.email || "");
+
+    await loadAuditLog();
+
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+    }
+
+    refreshTimer = setInterval(() => {
+      loadAuditLog();
+    }, 30000);
+  }
+
+
+  // UČITAVANJE AUDIT LOG PODATAKA
+
+  async function loadAuditLog() {
+    status.textContent = "Učitavanje podataka...";
+    status.classList.remove("error");
+
+    try {
+      const { data: sessionData } =
+        await supabaseClient.auth.getSession();
+
+      const user = sessionData.session?.user;
+
+      if (!user || user.id !== ADMIN_UUID) {
+        throw new Error("Sesija nije važeća ili nemate pristup.");
+      }
+
+      const { data, error } = await supabaseClient
+        .from("audit_log")
+        .select(`
+          id,
+          table_schema,
+          table_name,
+          operation,
+          old_data,
+          new_data,
+          changed_by,
+          changed_at
+        `)
+        .neq("table_name", "POSAO_KORISNICI_LOG")
+        .order("id", { ascending: false })
+        .limit(200);
+
+      if (error) {
+        throw error;
+      }
+
+      auditRows.innerHTML = "";
+
+      if (!data || data.length === 0) {
+        const row = document.createElement("tr");
+        addCell(row, "Nema zabilježenih promjena.");
+        const cell = row.querySelector("td");
+        cell.colSpan = 6;
+        auditRows.appendChild(row);
+      } else {
+        data.forEach(record => {
+          const row = document.createElement("tr");
+
+          addCell(row, record.id);
+          addCell(row, record.table_name);
+          addCell(row, record.operation);
+
+          const date = record.changed_at
+            ? new Date(record.changed_at).toLocaleString("bs-BA")
+            : "—";
+
+          addCell(row, date);
+          addCell(row, record.changed_by || "—");
+
+          const changesCell = document.createElement("td");
+
+          const changes = getChangedFields(
+            record.old_data,
+            record.new_data,
+            record.operation
+          );
+
+          if (changes.length === 0) {
+            changesCell.textContent = "Nema prikazanih promjena.";
+          } else {
+            changes.forEach(change => {
+              const item = document.createElement("div");
+              item.className = "change-item";
+
+              const fieldName = document.createElement("div");
+              fieldName.className = "field-name";
+              fieldName.textContent = change.field;
+
+              const before = document.createElement("div");
+              before.className = "before";
+              before.textContent =
+                "Prije: " + formatValue(change.oldValue);
+
+              const after = document.createElement("div");
+              after.className = "after";
+              after.textContent =
+                "Poslije: " + formatValue(change.newValue);
+
+              item.appendChild(fieldName);
+              item.appendChild(before);
+              item.appendChild(after);
+
+              changesCell.appendChild(item);
+            });
+          }
+
+          row.appendChild(changesCell);
+          auditRows.appendChild(row);
+        });
+      }
+
+      status.textContent =
+        "Učitano " + (data?.length || 0) +
+        " zapisa. Posljednje osvježavanje: " +
+        new Date().toLocaleTimeString("bs-BA");
+
+    } catch (error) {
+      status.textContent = "Greška: " + error.message;
+      status.classList.add("error");
+
+      auditRows.innerHTML = "";
+
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+
+      cell.colSpan = 6;
+      cell.textContent = error.message;
+
+      row.appendChild(cell);
+      auditRows.appendChild(row);
+    }
+  }
+
+
+  // PRONALAŽENJE PROMIJENJENIH POLJA
+
+  function getChangedFields(oldData, newData, operation) {
+    const oldObj = oldData || {};
+    const newObj = newData || {};
+
+    const fields = new Set([
+      ...Object.keys(oldObj),
+      ...Object.keys(newObj)
+    ]);
+
+    const changes = [];
+
+    fields.forEach(field => {
+      const oldValue = oldObj[field];
+      const newValue = newObj[field];
+
+      if (operation === "INSERT") {
+        if (newValue !== null && newValue !== undefined) {
+          changes.push({
+            field,
+            oldValue: null,
+            newValue
+          });
+        }
+
+      } else if (operation === "DELETE") {
+        if (oldValue !== null && oldValue !== undefined) {
+          changes.push({
+            field,
+            oldValue,
+            newValue: null
+          });
+        }
+
+      } else if (
+        JSON.stringify(oldValue) !== JSON.stringify(newValue)
+      ) {
+        changes.push({
+          field,
+          oldValue,
+          newValue
+        });
+      }
+    });
+
+    return changes;
+  }
+
+
+  // FORMATIRANJE VRIJEDNOSTI
+
+  function formatValue(value) {
+    if (value === null || value === undefined) {
+      return "—";
+    }
+
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  }
+
+
+  // DODAVANJE ĆELIJE U TABELU
+
+  function addCell(row, value) {
+    const td = document.createElement("td");
+
+    td.textContent =
+      value === null || value === undefined
+        ? ""
+        : String(value);
+
+    row.appendChild(td);
+  }
+
+
+  // ODJAVA
+
+  async function logout() {
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+
+    await supabaseClient.auth.signOut();
+
+    auditScreen.classList.add("hidden");
+    loginScreen.classList.remove("hidden");
+
+    document.getElementById("password").value = "";
+    loginStatus.textContent = "";
+    status.textContent = "";
+  }
+
+
+  // PROVJERA POSTOJEĆE SESIJE PRI OTVARANJU STRANICE
+
+  async function checkExistingSession() {
+    const { data, error } =
+      await supabaseClient.auth.getSession();
+
+    if (error) {
+      return;
+    }
+
+    const user = data.session?.user;
+
+    if (user && user.id === ADMIN_UUID) {
+      await showAuditScreen(user);
+    } else if (user) {
+      await supabaseClient.auth.signOut();
+    }
+  }
+
+
+  // ENTER ZA PRIJAVU
+
+  document.getElementById("password").addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Enter") {
+        login();
+      }
+    }
+  );
+
+
+  // POKRETANJE
+
+  checkExistingSession();
+
+</script>
+
+</body>
+</html>
