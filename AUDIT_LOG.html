@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOCBIZHUB | Audit Log</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #718096;
+      --border: #e5e9f2;
+      --blue: #315efb;
+      --green: #12805c;
+      --orange: #bd7414;
+      --red: #c33b45;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+      max-width: 1450px;
+      margin: auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    h1 {
+      margin: 0 0 7px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 11px 17px;
+      cursor: pointer;
+      font-weight: 700;
+      background: var(--blue);
+      color: white;
+    }
+
+    button:hover { opacity: .9; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat, .panel, .activity {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      box-shadow: 0 3px 12px rgba(20, 35, 70, .035);
+    }
+
+    .stat { padding: 19px; }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 9px;
+    }
+
+    .stat-value {
+      font-size: 27px;
+      font-weight: 800;
+    }
+
+    .panel {
+      padding: 17px;
+      margin-bottom: 20px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: 11px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      min-width: 0;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 4px 0 15px;
+    }
+
+    #status {
+      padding: 14px;
+      border-radius: 9px;
+      background: #edf2ff;
+      color: #2848a5;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+
+    #status.error {
+      background: #fff0f0;
+      color: var(--red);
+    }
+
+    .activity {
+      padding: 18px;
+      margin-bottom: 13px;
+    }
+
+    .activity-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .activity-title {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      background: #edf0f6;
+      color: #475569;
+    }
+
+    .badge.INSERT {
+      background: #e4f7ef;
+      color: var(--green);
+    }
+
+    .badge.UPDATE {
+      background: #fff2dc;
+      color: var(--orange);
+    }
+
+    .badge.DELETE {
+      background: #ffe8e8;
+      color: var(--red);
+    }
+
+    .changes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .change {
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      min-width: 0;
+    }
+
+    .change-name {
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .old-value, .new-value {
+      font-size: 13px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    .old-value { color: var(--red); }
+    .new-value { color: var(--green); }
+
+    .value-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    details {
+      margin-top: 13px;
+      border-top: 1px solid var(--border);
+      padding-top: 11px;
+    }
+
+    summary {
+      cursor: pointer;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #f7f8fb;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+      max-height: 350px;
+      overflow: auto;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 10px;
+      background: white;
+      border-radius: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .filters { grid-template-columns: 1fr 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 13px; }
+      h1 { font-size: 23px; }
+      .filters { grid-template-columns: 1fr; }
+      .changes { grid-template-columns: 1fr; }
+      .activity { padding: 13px; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <header>
+      <div>
+        <h1>📋 Audit Log</h1>
+        <div class="subtitle">
+          DOCBIZHUB – Evidencija svih promjena u sistemu
+        </div>
+      </div>
+
+      <button id="refreshBtn">↻ Osvježi evidenciju</button>
+    </header>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">Ukupno evidentiranih događaja</div>
+        <div class="stat-value" id="totalCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Dodavanja</div>
+        <div class="stat-value" id="insertCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Izmjene</div>
+        <div class="stat-value" id="updateCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Brisanja</div>
+        <div class="stat-value" id="deleteCount">0</div>
+      </div>
+    </section>
+
+    <div id="status">Provjeravam prijavu i učitavam evidenciju...</div>
+
+    <section class="panel">
+      <div class="section-title">Pretraga i filteri</div>
+
+      <div class="filters">
+        <div>
+          <label for="searchInput">Pretraga</label>
+          <input id="searchInput"
+            placeholder="Korisnik, tabela, ID ili vrijednost...">
+        </div>
+
+        <div>
+          <label for="tableFilter">Tabela</label>
+          <select id="tableFilter">
+            <option value="">Sve tabele</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="operationFilter">Vrsta promjene</label>
+          <select id="operationFilter">
+            <option value="">Sve promjene</option>
+            <option value="INSERT">Dodavanje</option>
+            <option value="UPDATE">Izmjena</option>
+            <option value="DELETE">Brisanje</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="dateFilter">Datum</label>
+          <input id="dateFilter" type="date">
+        </div>
+
+        <button id="clearBtn">Očisti filtere</button>
+      </div>
+    </section>
+
+    <div class="section-title">Historija aktivnosti</div>
+
+    <section id="activityList"></section>
+
+  </main>
+
+<script>
+  const SUPABASE_URL =
+    'https://uduwpvdjmanrgpumdrfh.supabase.co';
+
+  const SUPABASE_ANON_KEY =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ';
+
+  const ADMIN_ID =
+    '526b4d88-d95a-43d4-a43b-0cdf2306a245';
+
+  const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  let allLogs = [];
+
+  const $ = id => document.getElementById(id);
+
+  function setStatus(message, error = false) {
+    $('status').textContent = message;
+    $('status').className = error ? 'error' : '';
+  }
+
+  function safeText(value) {
+    if (value === null || value === undefined || value === '') {
+      return '—';
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+
+    return String(value);
+  }
+
+  function formatDate(value) {
+    if (!value) return 'Nepoznat datum';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return safeText(value);
+
+    return date.toLocaleString('bs-BA', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  function displayOperation(operation) {
+    const names = {
+      INSERT: 'DODAVANJE',
+      UPDATE: 'IZMJENA',
+      DELETE: 'BRISANJE'
+    };
+
+    return names[operation] || operation || 'DRUGO';
+  }
+
+  function isSensitive(key) {
+    return /password|token|secret|api.?key|iban/i.test(key);
+  }
+
+  function displayValue(key, value) {
+    if (isSensitive(key) && value !== null && value !== undefined) {
+      return '•••••••• (skriveno)';
+    }
+
+    return safeText(value);
+  }
+
+  function getChanges(log) {
+    const oldData = log.old_data || {};
+    const newData = log.new_data || {};
+    const keys = new Set([
+      ...Object.keys(oldData),
+      ...Object.keys(newData)
+    ]);
+
+    if (log.operation === 'INSERT') {
+      return Object.keys(newData).map(key => ({
+        key,
+        oldValue: null,
+        newValue: newData[key]
+      }));
+    }
+
+    if (log.operation === 'DELETE') {
+      return Object.keys(oldData).map(key => ({
+        key,
+        oldValue: oldData[key],
+        newValue: null
+      }));
+    }
+
+    const changes = [];
+
+    for (const key of keys) {
+      if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
+        changes.push({
+          key,
+          oldValue: oldData[key],
+          newValue: newData[key]
+        });
+      }
+    }
+
+    return changes;
+  }
+
+  function makeElement(tag, className, text) {
+    const el = document.createElement(tag);
+
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+
+    return el;
+  }
+
+  function renderLog(log) {
+    const card = makeElement('article', 'activity');
+
+    const top = makeElement('div', 'activity-top');
+    const left = document.createElement('div');
+
+    const title = makeElement(
+      'div',
+      'activity-title',
+      log.table_name + ' · ID ' +
+      safeText((log.new_data || log.old_data || {}).id || '—')
+    );
+
+    const meta = makeElement(
+      'div',
+      'meta',
+      'Vrijeme: ' + formatDate(log.changed_at) +
+      ' · Shema: ' + safeText(log.table_schema)
+    );
+
+    left.append(title, meta);
+
+    const badge = makeElement(
+      'span',
+      'badge ' + (log.operation || ''),
+      displayOperation(log.operation)
+    );
+
+    top.append(left, badge);
+    card.append(top);
+
+    const user = makeElement(
+      'div',
+      'meta',
+      'Izvršilac: ' + (log.changed_by || 'Nije zabilježen')
+    );
+
+    card.append(user);
+
+    const changes = getChanges(log);
+    const changesBox = makeElement('div', 'changes');
+
+    if (changes.length === 0) {
+      changesBox.append(
+        makeElement('div', 'meta', 'Nema pronađenih razlika u podacima.')
+      );
+    }
+
+    changes.forEach(change => {
+      const item = makeElement('div', 'change');
+
+      item.append(
+        makeElement('div', 'change-name', change.key)
+      );
+
+      const oldBox = document.createElement('div');
+      oldBox.append(
+        makeElement('div', 'value-label', 'Prije'),
+        makeElement(
+          'div',
+          'old-value',
+          displayValue(change.key, change.oldValue)
+        )
+      );
+
+      const newBox = document.createElement('div');
+      newBox.append(
+        makeElement('div', 'value-label', 'Poslije'),
+        makeElement(
+          'div',
+          'new-value',
+          displayValue(change.key, change.newValue)
+        )
+      );
+
+      item.append(oldBox, newBox);
+      changesBox.append(item);
+    });
+
+    card.append(changesBox);
+
+    const details = document.createElement('details');
+    const summary = makeElement(
+      'summary',
+      '',
+      'Prikaži kompletne podatke prije i poslije'
+    );
+
+    const pre = makeElement(
+      'pre',
+      '',
+      JSON.stringify({
+        old_data: log.old_data,
+        new_data: log.new_data
+      }, null, 2)
+    );
+
+    details.append(summary, pre);
+    card.append(details);
+
+    return card;
+  }
+
+  function updateTableOptions() {
+    const select = $('tableFilter');
+    const selected = select.value;
+
+    select.replaceChildren();
+
+    const all = document.createElement('option');
+    all.value = '';
+    all.textContent = 'Sve tabele';
+    select.append(all);
+
+    const tables = [...new Set(
+      allLogs.map(log => log.table_name).filter(Boolean)
+    )].sort();
+
+    tables.forEach(table => {
+      const option = document.createElement('option');
+      option.value = table;
+      option.textContent = table;
+      select.append(option);
+    });
+
+    select.value = selected;
+  }
+
+  function render() {
+    const search = $('searchInput').value.trim().toLowerCase();
+    const table = $('tableFilter').value;
+    const operation = $('operationFilter').value;
+    const date = $('dateFilter').value;
+
+    const filtered = allLogs.filter(log => {
+      if (table && log.table_name !== table) return false;
+      if (operation && log.operation !== operation) return false;
+
+      if (date && !String(log.changed_at || '').startsWith(date)) {
+        return false;
+      }
+
+      if (search) {
+        const searchable = JSON.stringify(log).toLowerCase();
+
+        if (!searchable.includes(search)) return false;
+      }
+
+      return true;
+    });
+
+    $('totalCount').textContent = allLogs.length;
+    $('insertCount').textContent =
+      allLogs.filter(x => x.operation === 'INSERT').length;
+    $('updateCount').textContent =
+      allLogs.filter(x => x.operation === 'UPDATE').length;
+    $('deleteCount').textContent =
+      allLogs.filter(x => x.operation === 'DELETE').length;
+
+    const list = $('activityList');
+    list.replaceChildren();
+
+    if (filtered.length === 0) {
+      list.append(
+        makeElement(
+          'div',
+          'empty',
+          'Nema aktivnosti koje odgovaraju odabranim filterima.'
+        )
+      );
+      return;
+    }
+
+    filtered.forEach(log => {
+      list.append(renderLog(log));
+    });
+  }
+
+  async function loadLogs() {
+    setStatus('Provjeravam administratorsku prijavu...');
+
+    try {
+      const { data: sessionData, error: sessionError } =
+        await db.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      const session = sessionData.session;
+
+      if (!session) {
+        setStatus(
+          'Niste prijavljeni. Prijavite se u DOCBIZHUB, pa ponovo otvorite ovu stranicu.',
+          true
+        );
+        $('activityList').replaceChildren();
+        return;
+      }
+
+      if (session.user.id !== ADMIN_ID) {
+        setStatus(
+          'Pristup odbijen. Ovaj nalog nema administratorsko odobrenje za Audit Log.',
+          true
+        );
+        $('activityList').replaceChildren();
+        return;
+      }
+
+      setStatus('Učitavam audit evidenciju...');
+
+      const { data, error } = await db
+        .from('audit_log')
+        .select(
+          'id, table_schema, table_name, operation, old_data, new_data, changed_by, changed_at'
+        )
+        .order('changed_at', { ascending: false })
+        .limit(500);
+
+      if (error) throw error;
+
+      allLogs = data || [];
+
+      updateTableOptions();
+      render();
+
+      setStatus(
+        'Uspješno učitano ' + allLogs.length +
+        ' zapisa. Prikazano je najviše 500 najnovijih događaja.'
+      );
+
+    } catch (error) {
+      console.error('Audit Log greška:', error);
+
+      setStatus(
+        'Greška pri učitavanju: ' +
+        (error.message || 'Nepoznata greška') +
+        '. Provjeri RLS pravilo i prijavu.',
+        true
+      );
+    }
+  }
+
+  $('refreshBtn').addEventListener('click', loadLogs);
+
+  $('clearBtn').addEventListener('click', () => {
+    $('searchInput').value = '';
+    $('tableFilter').value = '';
+    $('operationFilter').value = '';
+    $('dateFilter').value = '';
+    render();
+  });
+
+  [
+    'searchInput',
+    'tableFilter',
+    'operationFilter',
+    'dateFilter'
+  ].forEach(id => {
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+
+  loadLogs();
+</script>
+</body>
+</html>
