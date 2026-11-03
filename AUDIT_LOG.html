@@ -276,21 +276,23 @@
 
   // SUPABASE POSTAVKE
 
-  const SUPABASE_URL =
-    "https://uduwpvdjmanrgpumdrfh.supabase.co";
 
-  const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJiatI3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+const SUPABASE_URL =
+  "https://uduwpvdjmanrgpumdrfh.supabase.co";
 
-  const ADMIN_UUID =
-    "526b4d88-d95a-43d4-a43b-0cdf2306a245";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
 
-  const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+const ADMIN_UUID =
+  "526b4d88-d95a-43d4-a43b-0cdf2306a245";
 
-  const loginScreen = document.getElementById("loginScreen");
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+  
+   const loginScreen = document.getElementById("loginScreen");
   const auditScreen = document.getElementById("auditScreen");
   const loginStatus = document.getElementById("loginStatus");
   const status = document.getElementById("status");
