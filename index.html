@@ -1,518 +1,864 @@
 <!DOCTYPE html>
 <html lang="bs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocBizHub – Aktivacija korisnika</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocBizHub – Aktivacija korisnika</title>
 
-  <style>
-    * { box-sizing: border-box; }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    body {
-      margin: 0;
-      padding: 25px 15px;
-      background: #f1f5f9;
-      color: #172033;
-      font-family: Arial, sans-serif;
-    }
+<style>
+* { box-sizing: border-box; }
 
-    /* AUDIT LOG DUGME */
-    .audit-log-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      padding: 12px 16px;
-      margin: 0 0 20px;
-      background: #315efb;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(49, 94, 251, .2);
-      transition: background .2s ease, transform .2s ease;
-    }
+body {
+  margin: 0;
+  padding: 25px 15px;
+  background: #f1f5f9;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
 
-    .audit-log-button:hover {
-      background: #2448d8;
-      transform: translateY(-2px);
-      color: #fff;
-    }
+.container {
+  max-width: 620px;
+  margin: 30px auto;
+  padding: 28px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.08);
+}
 
-    .container {
-      max-width: 620px;
-      margin: 30px auto;
-      padding: 28px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,.08);
-    }
+h1 {
+  margin-top: 0;
+  font-size: 25px;
+  text-align: center;
+}
 
-    h1 {
-      margin-top: 0;
-      font-size: 25px;
-      text-align: center;
-    }
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 28px;
+}
 
-    .subtitle {
-      text-align: center;
-      color: #64748b;
-      margin-bottom: 28px;
-    }
+label {
+  display: block;
+  margin: 17px 0 7px;
+  font-weight: bold;
+}
 
-    label {
-      display: block;
-      margin: 17px 0 7px;
-      font-weight: bold;
-    }
+input[type="number"] {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 16px;
+}
 
-    input[type="number"] {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 16px;
-    }
+.mode {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
 
-    .mode {
-      display: flex;
-      gap: 12px;
-      margin: 20px 0;
-    }
+.mode label {
+  flex: 1;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: center;
+}
 
-    .mode label {
-      flex: 1;
-      margin: 0;
-      padding: 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 9px;
-      cursor: pointer;
-      text-align: center;
-    }
+.mode input {
+  width: auto;
+  margin-right: 6px;
+}
 
-    .mode input {
-      width: auto;
-      margin-right: 6px;
-    }
+.range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
-    .range {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+button, .audit-button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  border: 0;
+  border-radius: 9px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
 
-    button {
-      width: 100%;
-      padding: 15px;
-      margin-top: 15px;
-      border: 0;
-      border-radius: 9px;
-      background: #2563eb;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+button:hover, .audit-button:hover {
+  background: #1d4ed8;
+}
 
-    button:hover { background: #1d4ed8; }
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
 
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
+.save {
+  background: #475569;
+}
 
-    .save { background: #475569; }
-    .save:hover { background: #334155; }
+.save:hover {
+  background: #334155;
+}
 
-    .status {
-      display: none;
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 9px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      line-height: 1.5;
-    }
+.audit-button {
+  background: #7c3aed;
+}
 
-    .success {
-      display: block;
-      background: #dcfce7;
-      color: #166534;
-    }
+.audit-button:hover {
+  background: #6d28d9;
+}
 
-    .error {
-      display: block;
-      background: #fee2e2;
-      color: #991b1b;
-    }
+.notify-button {
+  background: #0f766e;
+}
 
-    .info {
-      display: block;
-      background: #e0f2fe;
-      color: #075985;
-    }
+.notify-button:hover {
+  background: #115e59;
+}
 
-    .result {
-      margin-top: 15px;
-      padding: 12px;
-      background: #f8fafc;
-      border-radius: 8px;
-      font-size: 13px;
-      max-height: 260px;
-      overflow: auto;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
+.status {
+  display: none;
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 9px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
 
-    .note {
-      margin-top: 22px;
-      color: #64748b;
-      font-size: 12px;
-      line-height: 1.5;
-    }
+.success {
+  display: block;
+  background: #dcfce7;
+  color: #166534;
+}
 
-    [hidden] { display: none !important; }
+.error {
+  display: block;
+  background: #fee2e2;
+  color: #991b1b;
+}
 
-    @media (max-width: 450px) {
-      .container { padding: 20px; }
-      .range { grid-template-columns: 1fr; }
-    }
-  </style>
+.info {
+  display: block;
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.result {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 13px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin-top: 22px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.notifications {
+  margin-top: 25px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.notifications h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+#notificationStatus {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.notification-item {
+  padding: 12px;
+  margin-top: 9px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #2563eb;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.notification-item.audit {
+  border-left-color: #7c3aed;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 450px) {
+  .container { padding: 20px; }
+  .range { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 
 <body>
-  <div class="container">
 
-   <a href="https://docbizhub.com/AUDIT_LOG.html"
-   style="
-     display:block;
-     width:100%;
-     box-sizing:border-box;
-     padding:14px;
-     margin-bottom:20px;
-     background:#315efb;
-     color:white;
-     text-align:center;
-     text-decoration:none;
-     border-radius:10px;
-     font-weight:bold;
-     font-family:Arial,sans-serif;
-   ">
-   📋 AUDIT LOG – EVIDENCIJA PROMJENA
-</a>
+<div class="container">
 
-    <h1>DocBizHub</h1>
-    <div class="subtitle">Aktivacija korisnika putem e-maila</div>
+  <h1>DocBizHub</h1>
+  <div class="subtitle">Aktivacija korisnika putem e-maila</div>
 
-    <div class="mode">
-      <label>
-        <input type="radio" name="mode" value="single" checked>
-        Jedan ID
-      </label>
+  <!-- DUGME AUDIT LOG -->
+  <a
+    href="https://cenu1122.github.io/SALJI_AKTIVACIJSKE_MAILVOE/AUDIT_LOG.html"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="audit-button"
+  >
+    OTVORI AUDIT LOG
+  </a>
 
-      <label>
-        <input type="radio" name="mode" value="range">
-        Od – do
-      </label>
-    </div>
+  <div class="mode">
+    <label>
+      <input type="radio" name="mode" value="single" checked>
+      Jedan ID
+    </label>
 
-    <div id="singleBox">
-      <label for="singleId">ID korisnika</label>
-      <input
-        id="singleId"
-        type="number"
-        min="1"
-        step="1"
-        placeholder="Npr. 100"
-      >
-    </div>
+    <label>
+      <input type="radio" name="mode" value="range">
+      Od – do
+    </label>
+  </div>
 
-    <div id="rangeBox" hidden>
-      <div class="range">
-        <div>
-          <label for="fromId">Od ID</label>
-          <input
-            id="fromId"
-            type="number"
-            min="1"
-            step="1"
-            placeholder="Npr. 100"
-          >
-        </div>
+  <div id="singleBox">
+    <label for="singleId">ID korisnika</label>
+    <input
+      id="singleId"
+      type="number"
+      min="1"
+      step="1"
+      placeholder="Npr. 100"
+    >
+  </div>
 
-        <div>
-          <label for="toId">Do ID</label>
-          <input
-            id="toId"
-            type="number"
-            min="1"
-            step="1"
-            placeholder="Npr. 110"
-          >
-        </div>
+  <div id="rangeBox" hidden>
+    <div class="range">
+      <div>
+        <label for="fromId">Od ID</label>
+        <input
+          id="fromId"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Npr. 100"
+        >
       </div>
-    </div>
 
-    <button id="sendButton" type="button">
-      POŠALJI ZAHTJEV
-    </button>
-
-    <button id="saveButton" class="save" type="button">
-      SAČUVAJ POSTAVKE
-    </button>
-
-    <div id="status" class="status"></div>
-    <div id="result" class="result" hidden></div>
-
-    <div class="note">
-      Edge Function:
-      <strong>AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND</strong>
-      <br><br>
-      Brojevi se čuvaju u browseru i automatski pomjeraju nakon uspješnog
-      odgovora funkcije bez evidentiranih grešaka.
+      <div>
+        <label for="toId">Do ID</label>
+        <input
+          id="toId"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Npr. 110"
+        >
+      </div>
     </div>
   </div>
 
-  <script>
-    // SUPABASE POSTAVKE
-    const SUPABASE_URL =
-      "https://uduwpvdjmanrgpumdrfh.supabase.co";
+  <button id="sendButton" type="button">
+    POŠALJI ZAHTJEV
+  </button>
 
-    const SUPABASE_ANON_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTEwODQsImV4cCI6MjEwMDM4NzA4NH0.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+  <button id="saveButton" class="save" type="button">
+    SAČUVAJ POSTAVKE
+  </button>
 
-    const FUNCTION_NAME =
-      "AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND";
+  <div id="status" class="status"></div>
+  <div id="result" class="result" hidden></div>
 
-    const STORAGE_KEY = "docbizhub_activation_sender_v1";
+  <!-- OBAVIJESTI -->
+  <div class="notifications">
 
-    const $ = (id) => document.getElementById(id);
+    <h3>OBAVIJESTI I PRAĆENJE PROMJENA</h3>
 
-    const singleId = $("singleId");
-    const fromId = $("fromId");
-    const toId = $("toId");
-    const sendButton = $("sendButton");
-    const statusBox = $("status");
-    const resultBox = $("result");
+    <button
+      id="enableNotifications"
+      class="notify-button"
+      type="button"
+    >
+      UKLJUČI BROWSER OBAVIJESTI
+    </button>
 
-    function getMode() {
-      return document.querySelector(
-        'input[name="mode"]:checked'
-      ).value;
+    <div id="notificationStatus">
+      Pokretanje praćenja...
+    </div>
+
+    <div id="notificationList"></div>
+
+  </div>
+
+  <div class="note">
+    Edge Function:
+    <strong>AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND</strong>
+
+    <br><br>
+
+    Brojevi se čuvaju u browseru i automatski pomjeraju nakon
+    uspješnog odgovora funkcije bez evidentiranih grešaka.
+
+    <br><br>
+
+    Audit log se provjerava svakih 60 sekundi.
+  </div>
+
+</div>
+
+<script>
+
+// =============================================
+// SUPABASE POSTAVKE
+// =============================================
+
+const SUPABASE_URL =
+  "https://uduwpvdjmanrgpumdrfh.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkdXdwdmRqbWFucmdwdW1kcmZoIiwiaWF0IjoxNzg0ODE5MDAwLCJleHAiOjIxMDAzODcwODR9.zdxIxiCJcaauEP1pm75d1-4YXO1Dn6tsAhZehFh2vsQ";
+
+const FUNCTION_NAME =
+  "AKTIVIRAJ_KORISNIKE_DOCBIZHUB_GMAIL_RESEND";
+
+const STORAGE_KEY =
+  "docbizhub_activation_sender_v1";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+
+const $ = id => document.getElementById(id);
+
+const singleId = $("singleId");
+const fromId = $("fromId");
+const toId = $("toId");
+const sendButton = $("sendButton");
+const statusBox = $("status");
+const resultBox = $("result");
+const notificationStatus = $("notificationStatus");
+const notificationList = $("notificationList");
+
+
+// =============================================
+// AKTIVACIJA KORISNIKA
+// =============================================
+
+function getMode() {
+  return document.querySelector(
+    'input[name="mode"]:checked'
+  ).value;
+}
+
+function showMode() {
+  const mode = getMode();
+
+  $("singleBox").hidden = mode !== "single";
+  $("rangeBox").hidden = mode !== "range";
+}
+
+document.querySelectorAll('input[name="mode"]').forEach(radio => {
+  radio.addEventListener("change", showMode);
+});
+
+function showStatus(message, type) {
+  statusBox.className = "status " + type;
+  statusBox.textContent = message;
+}
+
+function getSettings() {
+  return {
+    mode: getMode(),
+    singleId: singleId.value,
+    fromId: fromId.value,
+    toId: toId.value
+  };
+}
+
+function saveSettings(showMessage = true) {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(getSettings())
+  );
+
+  if (showMessage) {
+    showStatus(
+      "Postavke su sačuvane u localStorage.",
+      "success"
+    );
+  }
+}
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) return;
+
+    const data = JSON.parse(saved);
+
+    singleId.value = data.singleId || "";
+    fromId.value = data.fromId || "";
+    toId.value = data.toId || "";
+
+    const mode = data.mode || "single";
+
+    const radio = document.querySelector(
+      `input[name="mode"][value="${mode}"]`
+    );
+
+    if (radio) radio.checked = true;
+
+  } catch (error) {
+    console.error("Greška pri učitavanju:", error);
+  }
+
+  showMode();
+}
+
+function getPayload() {
+  if (getMode() === "single") {
+    const id = Number(singleId.value);
+
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw new Error("Unesi ispravan ID korisnika.");
     }
 
-    function showMode() {
-      const mode = getMode();
+    return { id };
+  }
 
-      $("singleBox").hidden = mode !== "single";
-      $("rangeBox").hidden = mode !== "range";
-    }
+  const od = Number(fromId.value);
+  const doId = Number(toId.value);
 
-    document.querySelectorAll('input[name="mode"]').forEach(radio => {
-      radio.addEventListener("change", showMode);
-    });
+  if (
+    !Number.isSafeInteger(od) ||
+    !Number.isSafeInteger(doId) ||
+    od < 1 ||
+    doId < 1
+  ) {
+    throw new Error("Unesi ispravne početni i završni ID.");
+  }
 
-    function showStatus(message, type) {
-      statusBox.className = "status " + type;
-      statusBox.textContent = message;
-    }
+  if (od > doId) {
+    throw new Error(
+      "Početni ID ne može biti veći od završnog."
+    );
+  }
 
-    function getSettings() {
-      return {
-        mode: getMode(),
-        singleId: singleId.value,
-        fromId: fromId.value,
-        toId: toId.value
-      };
-    }
+  return {
+    od: od,
+    do: doId
+  };
+}
 
-    function saveSettings(showMessage = true) {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(getSettings())
+function incrementNumbers(payload) {
+  if (payload.id !== undefined) {
+    singleId.value = payload.id + 1;
+  } else {
+    const razlika = payload.do - payload.od;
+
+    fromId.value = payload.do + 1;
+    toId.value = payload.do + razlika;
+  }
+
+  saveSettings(false);
+}
+
+async function sendRequest() {
+  sendButton.disabled = true;
+  sendButton.textContent = "ŠALJEM...";
+
+  resultBox.hidden = true;
+  resultBox.textContent = "";
+
+  try {
+    const payload = getPayload();
+
+    saveSettings(false);
+
+    showStatus(
+      "Zahtjev se šalje Supabase funkciji...",
+      "info"
+    );
+
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const responseText = await response.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        "Funkcija nije vratila ispravan JSON odgovor.\n" +
+        "HTTP: " + response.status + "\n" +
+        responseText
       );
+    }
 
-      if (showMessage) {
-        showStatus(
-          "Postavke su sačuvane u localStorage.",
-          "success"
+    resultBox.hidden = false;
+    resultBox.textContent = JSON.stringify(data, null, 2);
+
+    if (!response.ok || data.success !== true) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        `Greška HTTP ${response.status}`
+      );
+    }
+
+    const errors = Number(data.greske || 0);
+
+    if (errors > 0) {
+      showStatus(
+        `Funkcija je prijavila ${errors} grešaka.\n` +
+        "Brojevi nisu povećani. Pregledaj rezultat ispod.",
+        "error"
+      );
+      return;
+    }
+
+    incrementNumbers(payload);
+
+    showStatus(
+      "ZAHTJEV USPJEŠNO OBRAĐEN!\n\n" +
+      "Poslani podaci: " + JSON.stringify(payload) +
+      "\n\nBrojevi su automatski povećani i sačuvani.",
+      "success"
+    );
+
+  } catch (error) {
+    showStatus(
+      "ZAHTJEV NIJE USPJEŠNO ZAVRŠEN\n\n" +
+      error.message,
+      "error"
+    );
+
+  } finally {
+    sendButton.disabled = false;
+    sendButton.textContent = "POŠALJI ZAHTJEV";
+  }
+}
+
+sendButton.addEventListener("click", sendRequest);
+
+$("saveButton").addEventListener("click", () => {
+  saveSettings(true);
+});
+
+loadSettings();
+
+
+// =============================================
+// SISTEM OBAVIJESTI
+// =============================================
+
+function addNotification(title, message, type = "normal") {
+  const item = document.createElement("div");
+
+  item.className =
+    "notification-item" +
+    (type === "audit" ? " audit" : "");
+
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+
+  const content = document.createElement("div");
+  content.textContent = message;
+
+  const time = document.createElement("small");
+  time.textContent = new Date().toLocaleString("bs-BA");
+
+  item.appendChild(heading);
+  item.appendChild(content);
+  item.appendChild(time);
+
+  notificationList.prepend(item);
+
+  while (notificationList.children.length > 30) {
+    notificationList.removeChild(
+      notificationList.lastChild
+    );
+  }
+
+  if (
+    "Notification" in window &&
+    Notification.permission === "granted"
+  ) {
+    try {
+      new Notification(title, {
+        body: message.substring(0, 250)
+      });
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+}
+
+
+// =============================================
+// DOZVOLA ZA BROWSER OBAVIJESTI
+// =============================================
+
+$("enableNotifications").addEventListener("click", async () => {
+
+  if (!("Notification" in window)) {
+    notificationStatus.textContent =
+      "Ovaj browser ne podržava browser obavijesti.";
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+
+  if (permission === "granted") {
+    notificationStatus.textContent =
+      "Browser obavijesti su uključene.";
+
+    addNotification(
+      "Obavijesti uključene",
+      "Browser će prikazivati nove obavijesti."
+    );
+
+  } else {
+    notificationStatus.textContent =
+      "Dozvola za browser obavijesti nije odobrena.";
+  }
+
+});
+
+
+// =============================================
+// PRAĆENJE TABELE NOTIFIKACIJE
+// =============================================
+
+supabaseClient
+  .channel("docbizhub-notifikacije-live")
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "NOTIFIKACIJE"
+    },
+    payload => {
+      addNotification(
+        "NOVA NOTIFIKACIJA",
+        JSON.stringify(payload.new),
+        "normal"
+      );
+    }
+  )
+  .subscribe(status => {
+
+    if (status === "SUBSCRIBED") {
+      notificationStatus.textContent =
+        "Praćenje NOTIFIKACIJE je aktivno.";
+    }
+
+    if (status === "CHANNEL_ERROR") {
+      notificationStatus.textContent =
+        "Greška pri povezivanju s NOTIFIKACIJE. " +
+        "Provjeri Realtime i RLS postavke.";
+    }
+
+  });
+
+
+// =============================================
+// PRAĆENJE AUDIT LOG SVAKIH 60 SEKUNDI
+// =============================================
+
+let lastAuditId = null;
+let auditInitialized = false;
+let auditBusy = false;
+
+async function checkAuditLog() {
+
+  if (auditBusy) return;
+
+  auditBusy = true;
+
+  try {
+
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    const session = sessionData.session;
+
+    if (!session) {
+      notificationStatus.textContent =
+        "NOTIFIKACIJE se prate. Za audit_log je potrebna " +
+        "admin prijava u AUDIT_LOG.html. Nakon prijave " +
+        "osvježi ovu stranicu.";
+      return;
+    }
+
+    // Prvo učitavanje: zapamti posljednji ID.
+    // Stari zapisi se ne prikazuju kao nove promjene.
+
+    if (!auditInitialized) {
+
+      const { data, error } = await supabaseClient
+        .from("audit_log")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      lastAuditId =
+        data && data.length ? String(data[0].id) : "0";
+
+      auditInitialized = true;
+
+      notificationStatus.textContent =
+        "Admin prijava potvrđena. Audit log se provjerava " +
+        "svakih 60 sekundi.";
+
+      return;
+    }
+
+    // Učitaj samo nove audit zapise.
+
+    const { data: changes, error } = await supabaseClient
+      .from("audit_log")
+      .select(
+        "id, table_schema, table_name, operation, " +
+        "old_data, new_data, changed_by, changed_at"
+      )
+      .gt("id", lastAuditId)
+      .order("id", { ascending: true })
+      .limit(100);
+
+    if (error) throw error;
+
+    if (changes && changes.length > 0) {
+
+      for (const change of changes) {
+
+        const operation =
+          String(change.operation || "PROMJENA").toUpperCase();
+
+        const tableName =
+          change.table_name || "Nepoznata tabela";
+
+        const rowData =
+          change.new_data || change.old_data || {};
+
+        const rowId =
+          rowData.id !== undefined
+            ? rowData.id
+            : "nije dostupan";
+
+        const message =
+          "Tabela: " + tableName +
+          "\nOperacija: " + operation +
+          "\nID reda: " + rowId +
+          "\nVrijeme: " + (change.changed_at || "nije dostupno") +
+          "\nKorisnik: " + (change.changed_by || "nije evidentiran") +
+          "\n\nStari podaci: " + JSON.stringify(change.old_data) +
+          "\n\nNovi podaci: " + JSON.stringify(change.new_data);
+
+        addNotification(
+          "AUDIT LOG – " + operation,
+          message,
+          "audit"
         );
+
+        lastAuditId = String(change.id);
       }
     }
 
-    function loadSettings() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) return;
+    notificationStatus.textContent =
+      "Praćenje aktivno. Posljednja provjera: " +
+      new Date().toLocaleTimeString("bs-BA") +
+      ". Sljedeća provjera za 60 sekundi.";
 
-        const data = JSON.parse(saved);
+  } catch (error) {
 
-        singleId.value = data.singleId || "";
-        fromId.value = data.fromId || "";
-        toId.value = data.toId || "";
+    console.error("Audit log greška:", error);
 
-        const mode = data.mode || "single";
+    notificationStatus.textContent =
+      "Audit log nije dostupan: " +
+      error.message +
+      ". Provjeri admin prijavu i RLS pravila.";
 
-        const radio = document.querySelector(
-          `input[name="mode"][value="${mode}"]`
-        );
+  } finally {
+    auditBusy = false;
+  }
+}
 
-        if (radio) radio.checked = true;
 
-      } catch (error) {
-        console.error("Greška pri učitavanju:", error);
-      }
+// Prva provjera.
 
-      showMode();
-    }
+checkAuditLog();
 
-    function getPayload() {
-      if (getMode() === "single") {
-        const id = Number(singleId.value);
+// Ponavljanje svakih 60 sekundi.
 
-        if (!Number.isSafeInteger(id) || id < 1) {
-          throw new Error("Unesi ispravan ID korisnika.");
-        }
+setInterval(checkAuditLog, 60000);
 
-        return { id };
-      }
+// Provjera pri povratku na karticu.
 
-      const od = Number(fromId.value);
-      const doId = Number(toId.value);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    checkAuditLog();
+  }
+});
 
-      if (
-        !Number.isSafeInteger(od) ||
-        !Number.isSafeInteger(doId) ||
-        od < 1 ||
-        doId < 1
-      ) {
-        throw new Error("Unesi ispravne početni i završni ID.");
-      }
+</script>
 
-      if (od > doId) {
-        throw new Error("Početni ID ne može biti veći od završnog.");
-      }
-
-      return {
-        od: od,
-        do: doId
-      };
-    }
-
-    // AUTOMATSKO POVEĆAVANJE ID BROJEVA
-    function incrementNumbers(payload) {
-      if (payload.id !== undefined) {
-        // Jedan ID: povećaj za 1
-        singleId.value = payload.id + 1;
-
-      } else {
-        // Raspon: pomjeri početak iza prethodnog završnog ID-a
-        // i zadrži isti broj ID-jeva u sljedećem rasponu.
-        const razlika = payload.do - payload.od;
-
-        fromId.value = payload.do + 1;
-        toId.value = payload.do + razlika;
-      }
-
-      saveSettings(false);
-    }
-
-    async function sendRequest() {
-      sendButton.disabled = true;
-      sendButton.textContent = "ŠALJEM...";
-
-      resultBox.hidden = true;
-      resultBox.textContent = "";
-
-      try {
-        const payload = getPayload();
-
-        saveSettings(false);
-
-        showStatus(
-          "Zahtjev se šalje Supabase funkciji...",
-          "info"
-        );
-
-        const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": SUPABASE_ANON_KEY,
-              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify(payload)
-          }
-        );
-
-        const responseText = await response.text();
-
-        let data;
-
-        try {
-          data = JSON.parse(responseText);
-        } catch {
-          throw new Error(
-            "Funkcija nije vratila ispravan JSON odgovor.\n" +
-            "HTTP: " + response.status + "\n" +
-            responseText
-          );
-        }
-
-        resultBox.hidden = false;
-        resultBox.textContent = JSON.stringify(data, null, 2);
-
-        if (!response.ok || data.success !== true) {
-          throw new Error(
-            data.error ||
-            data.message ||
-            `Greška HTTP ${response.status}`
-          );
-        }
-
-        const errors = Number(data.greske || 0);
-
-        if (errors > 0) {
-          showStatus(
-            `Funkcija je prijavila ${errors} grešaka.\n` +
-            "Brojevi nisu povećani. Pregledaj rezultat ispod.",
-            "error"
-          );
-          return;
-        }
-
-        incrementNumbers(payload);
-
-        showStatus(
-          "ZAHTJEV USPJEŠNO OBRAĐEN!\n\n" +
-          "Poslani podaci: " + JSON.stringify(payload) +
-          "\n\nBrojevi su automatski povećani i sačuvani.",
-          "success"
-        );
-
-      } catch (error) {
-        showStatus(
-          "ZAHTJEV NIJE USPJEŠNO ZAVRŠEN\n\n" + error.message,
-          "error"
-        );
-
-      } finally {
-        sendButton.disabled = false;
-        sendButton.textContent = "POŠALJI ZAHTJEV";
-      }
-    }
-
-    sendButton.addEventListener("click", sendRequest);
-
-    $("saveButton").addEventListener("click", () => {
-      saveSettings(true);
-    });
-
-    loadSettings();
-  </script>
 </body>
 </html>
