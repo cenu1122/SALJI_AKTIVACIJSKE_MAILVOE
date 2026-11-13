@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bs">
 <head>
@@ -129,6 +130,15 @@ button:disabled {
   background: #115e59;
 }
 
+/* NOVO: DUGME ZA KOOPERACIONE PARTNERE */
+.cooperation-button {
+  background: #059669;
+}
+
+.cooperation-button:hover {
+  background: #047857;
+}
+
 .status {
   display: none;
   margin-top: 20px;
@@ -229,7 +239,7 @@ button:disabled {
 
   <h1>DocBizHub</h1>
   <div class="subtitle">Aktivacija korisnika putem e-maila</div>
-  
+
   <!-- DUGME AUDIT LOG -->
   <a
     href="https://cenu1122.github.io/SALJI_AKTIVACIJSKE_MAILVOE/AUDIT_LOG.html"
@@ -239,6 +249,15 @@ button:disabled {
   >
     OTVORI AUDIT LOG
   </a>
+
+  <!-- NOVO DUGME: KOOPERACIONI PARTNERI -->
+  <button
+    id="copyCooperationButton"
+    class="cooperation-button"
+    type="button"
+  >
+    KOPIRAJ ZAHTJEV ZA KOOPERANTE
+  </button>
 
   <div class="mode">
     <label>
@@ -377,7 +396,6 @@ const statusBox = $("status");
 const resultBox = $("result");
 const notificationStatus = $("notificationStatus");
 const notificationList = $("notificationList");
-
 
 // =============================================
 // AKTIVACIJA KORISNIKA
@@ -599,6 +617,91 @@ $("saveButton").addEventListener("click", () => {
 
 loadSettings();
 
+// =============================================
+// NOVO: KOPIRANJE ZAHTJEVA ZA KOOPERACIONE PARTNERE
+// =============================================
+
+$("copyCooperationButton").addEventListener("click", async () => {
+
+  const tekst = `Molim te pronađi potencijalne kooperacione i poslovne partnerske firme za sljedeće preduzeće.
+
+LINK WEB-STRANICE PREDUZEĆA:
+https://cenu1122.github.io/MCA2017A/#services
+
+ZADATAK:
+
+1. Otvori i detaljno analiziraj navedenu web-stranicu.
+2. Utvrdi čime se preduzeće bavi, koje usluge nudi i kakve klijente traži.
+3. Na osnovu stvarnih usluga preduzeća pronađi odgovarajuće potencijalne poslovne partnere.
+4. Prioritet daj firmama iz Njemačke, ali uključi i Austriju, Švicarsku i druge evropske zemlje ako su relevantne.
+5. Pronađi firme koje bi mogle biti zainteresovane za dugoročnu poslovnu saradnju, zajedničke projekte ili međusobno pružanje usluga.
+
+ZA SVAKU PRONAĐENU FIRMU NAVEDI:
+
+- Naziv firme.
+- Zvaničnu web-stranicu.
+- Grad i državu.
+- Javno dostupnu e-mail adresu.
+- Broj telefona, ako je dostupan.
+- Ime kontakt osobe ili odjela za saradnju, ako je javno dostupno.
+- Kratak opis djelatnosti firme.
+- Konkretan razlog zbog kojeg bi saradnja bila korisna.
+- Prijedlog mogućeg oblika saradnje.
+
+DODATNI ZAHTJEVI:
+
+- Pronađi što više kvalitetnih i relevantnih potencijalnih partnera.
+- Provjeri da li web-stranice i kontakt podaci zaista postoje.
+- Nemoj izmišljati firme, adrese, e-mailove ili telefonske brojeve.
+- Razdvoji potvrđene kontakt podatke od nepotvrđenih.
+- Izbjegavaj firme koje nemaju stvarnu povezanost s djelatnošću analiziranog preduzeća.
+- Posebno izdvoji 10 najperspektivnijih potencijalnih partnera.
+- Objasni zašto su upravo te firme najbolji izbor.
+
+NA KRAJU:
+
+Napravi preglednu tabelu svih pronađenih firmi, rangiraj ih prema potencijalu za saradnju i predloži kojim firmama prvo treba poslati poslovni upit.
+
+Također pripremi profesionalnu poruku na njemačkom jeziku za kontaktiranje potencijalnih partnera.
+
+Rezultate i objašnjenja napiši na bosanskom jeziku.
+
+Želim detaljno i konkretno istraživanje zasnovano na stvarnim podacima, a ne samo općenite prijedloge.`;
+
+  const copyButton = $("copyCooperationButton");
+
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      throw new Error("Clipboard nije dostupan u ovom browseru.");
+    }
+
+    await navigator.clipboard.writeText(tekst);
+
+    showStatus(
+      "ZAHTJEV ZA KOOPERACIONE PARTNERE USPJEŠNO JE KOPIRAN!\n\n" +
+      "Poruka sadrži link preduzeća i kompletne instrukcije.\n\n" +
+      "Sada je možeš zalijepiti i poslati u ChatGPT.",
+      "success"
+    );
+
+    copyButton.textContent = "USPJEŠNO KOPIRANO!";
+
+    setTimeout(() => {
+      copyButton.textContent = "KOPIRAJ ZAHTJEV ZA KOOPERANTE";
+    }, 2500);
+
+  } catch (error) {
+
+    showStatus(
+      "Kopiranje nije uspjelo.\n\n" +
+      error.message +
+      "\n\nProvjeri da li stranicu otvaraš preko HTTPS veze.",
+      "error"
+    );
+
+  }
+
+});
 
 // =============================================
 // SISTEM OBAVIJESTI
@@ -646,7 +749,6 @@ function addNotification(title, message, type = "normal") {
   }
 }
 
-
 // =============================================
 // DOZVOLA ZA BROWSER OBAVIJESTI
 // =============================================
@@ -676,7 +778,6 @@ $("enableNotifications").addEventListener("click", async () => {
   }
 
 });
-
 
 // =============================================
 // PRAĆENJE TABELE NOTIFIKACIJE
@@ -713,7 +814,6 @@ supabaseClient
     }
 
   });
-
 
 // =============================================
 // PRAĆENJE AUDIT LOG SVAKIH 60 SEKUNDI
@@ -840,7 +940,6 @@ async function checkAuditLog() {
     auditBusy = false;
   }
 }
-
 
 // Prva provjera.
 
